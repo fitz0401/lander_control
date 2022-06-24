@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kaanh/Desktop/robot/src/mytestserver.cpp
+stdio.h
+-
+iostream
+-
+stdlib.h
+-
+netinet/in.h
+-
+unistd.h
+-
+sys/socket.h
+-
+arpa/inet.h
+-
+string.h
+-
+

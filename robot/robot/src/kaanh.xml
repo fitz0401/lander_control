@@ -1,0 +1,50 @@
+<ControlServer>
+    <EthercatMaster name="ethercat_master" sample_period_ns="1000000">
+        <SlavePoolObject>
+            <EthercatSlave name="ethercat_slave" phy_id="0" is_virtual="true" vendor_id="1717995656" product_code="0x20181302" revision_num="0x20181011" dc_assign_activate="0x00000300" sync0_shift_ns="900000">
+                <SyncManagerPoolObject>
+                    <SyncManager is_tx="false"/>
+                    <SyncManager is_tx="true"/>
+                    <SyncManager is_tx="false">
+                        <Pdo index="0x1600">
+                            <PdoEntry name="entry" index="0x6040" subindex="0x00" size="16"/>
+                            <PdoEntry name="entry" index="0x6060" subindex="0x00" size="8"/>
+                            <PdoEntry name="entry" index="0x607a" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60b8" subindex="0x00" size="16"/>
+                            <PdoEntry name="entry" index="0x60fe" subindex="0x01" size="32"/>
+                            <PdoEntry name="entry" index="0x60fe" subindex="0x02" size="32"/>
+                        </Pdo>
+                    </SyncManager>
+                    <SyncManager is_tx="true">
+                        <Pdo index="0x1a00">
+                            <PdoEntry name="entry" index="0x603f" subindex="0x00" size="16"/>
+                            <PdoEntry name="entry" index="0x6041" subindex="0x00" size="16"/>
+                            <PdoEntry name="entry" index="0x6061" subindex="0x00" size="8"/>
+                            <PdoEntry name="entry" index="0x6064" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60b9" subindex="0x00" size="16"/>
+                            <PdoEntry name="entry" index="0x60ba" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60bb" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60bc" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60bd" subindex="0x00" size="32"/>
+                            <PdoEntry name="entry" index="0x60fd" subindex="0x00" size="32"/>
+                        </Pdo>
+                    </SyncManager>
+                </SyncManagerPoolObject>
+            </EthercatSlave>
+        </SlavePoolObject>
+    </EthercatMaster>
+    <Controller>
+        <MotorPoolObject>
+            <EthercatMotor max_pos="2.9670597283903599" min_pos="-2.9670597283903599" max_vel="2.8000317189745032" min_vel="-2.8000317189745032" max_acc="14.039952101817979" min_acc="-14.039952101817979" max_pos_following_error="0.5" max_vel_following_error="0.5" pos_factor="-106807074.30850001" pos_offset="-0.094816153944533826" home_pos="0" slave="0"/>
+        </MotorPoolObject>
+        <DigitalIoPoolObject/>
+        <FtSensorPoolObject/>
+    </Controller>
+    <PlanRoot/>
+    <InterfacePoolObject>
+        <WebInterface name="websock_interface">
+            <Socket connect_type="WEB" port="5867"/>
+        </WebInterface>
+    </InterfacePoolObject>
+    <Robot/>
+</ControlServer>
