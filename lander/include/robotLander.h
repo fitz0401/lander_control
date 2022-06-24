@@ -87,6 +87,17 @@ namespace robotLander
         explicit MoveLine(const std::string &name = "mvline");
     };
 
+    class MovePlan :public aris::core::CloneObject<MovePlan, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~MovePlan();
+        explicit MovePlan(const std::string &name = "mvplan");
+    };
+
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;
 }
 
