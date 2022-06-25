@@ -135,7 +135,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/movemessage.cpp
 # )
-add_executable(lander  src/lander.cpp src/robotLander.cpp include/robotLander.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
+add_executable(lander  src/lander.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
 add_executable(client scripts/client.cpp)
 # add_executable(mytestserver src/mytestserver.cpp)
 # add_executable(mytestclient src/mytestclient.cpp)

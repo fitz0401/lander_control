@@ -3,7 +3,7 @@
 #include <atomic>
 #include <string>
 #include <filesystem>
-#include <robotLander.h>
+#include <ControlCMD.h>
 #include <ros/ros.h>
 
 using namespace aris::dynamic;
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
 	auto&cs = aris::server::ControlServer::instance();
 	aris::core::fromXmlFile(cs, xmlpath);		//加载kaanh.xml配置
-    cs.resetPlanRoot(robotLander::createPlanRoot().release());//加载cmd配置
+    cs.resetPlanRoot(ControlCMD::createPlanRoot().release());//加载cmd配置
 //    aris::core::toXmlFile(cs, xmlpath);		   //save kaanh.xml配置
     cs.init();									//初始化
     cs.start();                                 //不注释，则程序运行时开启控制器服务

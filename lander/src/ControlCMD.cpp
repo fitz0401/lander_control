@@ -4,7 +4,7 @@
 #include <bitset>
 #include <fstream>
 #include "CubicSplineNoDynamic.h"
-#include "robotLander.h"
+#include "ControlCMD.h"
 #include "GetPosIK.h"
 #include "math.h"
 #include "WalkLegExeLegIk.h"
@@ -13,7 +13,7 @@
 using namespace aris::dynamic;
 using namespace aris::plan;
 
-namespace robotLander
+namespace ControlCMD
 {
     //指令的执行顺序
     //1、先执行prepareNrt，每条指令只执行一次
@@ -1434,14 +1434,14 @@ namespace robotLander
 		plan_root->planPool().add<aris::plan::Show>();
 		plan_root->planPool().add<aris::plan::Clear>();	
 
-		plan_root->planPool().add<robotLander::MoveS>();
-        plan_root->planPool().add<robotLander::GetPos>();
-        plan_root->planPool().add<robotLander::FindHome>();
-        plan_root->planPool().add<robotLander::MoveLeg>();
-        plan_root->planPool().add<robotLander::MoveSingleLeg>();
-        plan_root->planPool().add<robotLander::MoveRobot>();
-        plan_root->planPool().add<robotLander::MoveLine>();
-        plan_root->planPool().add<robotLander::MovePlan>();
+		plan_root->planPool().add<ControlCMD::MoveS>();
+        plan_root->planPool().add<ControlCMD::GetPos>();
+        plan_root->planPool().add<ControlCMD::FindHome>();
+        plan_root->planPool().add<ControlCMD::MoveLeg>();
+        plan_root->planPool().add<ControlCMD::MoveSingleLeg>();
+        plan_root->planPool().add<ControlCMD::MoveRobot>();
+        plan_root->planPool().add<ControlCMD::MoveLine>();
+        plan_root->planPool().add<ControlCMD::MovePlan>();
 		return plan_root;
 	}
 }

@@ -1,10 +1,10 @@
-﻿#ifndef ROBOTLANDER_H_
-#define ROBOTLANDER_H_
+﻿#ifndef CONTROLCMD_H_
+#define CONTROLCMD_H_
 
 #include <memory>
 #include <aris.hpp>
 
-namespace robotLander
+namespace ControlCMD
 {
     //其他参数和函数声明
 	using Size = std::size_t;
