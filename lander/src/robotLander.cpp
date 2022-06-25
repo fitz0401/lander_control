@@ -7,8 +7,8 @@
 #include "robotLander.h"
 #include "GetPosIK.h"
 #include "math.h"
-#include "WalkLegExeLegIk.hpp"
-#include "param.h"
+#include "WalkLegExeLegIk.h"
+#include "Param.h"
 
 using namespace aris::dynamic;
 using namespace aris::plan;
@@ -1233,7 +1233,7 @@ namespace robotLander
         inFile1.close();
 
         // 從文件中讀取足端規劃軌跡
-        ifstream inFile2("PlanTrace", ios::in);
+        ifstream inFile2("/home/kaanh/Desktop/Lander_ws/PlanTrace", ios::in);
         if (!inFile2.is_open()) {
             mout() << "Can not open the trace file." << endl;
             return;
@@ -1354,9 +1354,9 @@ namespace robotLander
             }
         }
         else {
-            param.init_pos[param.legIndex][0] = param.legTrace[param.legIndex * 3][param.data_num - 1];
-            param.init_pos[param.legIndex][1] = param.legTrace[param.legIndex * 3 + 1][param.data_num - 1];
-            param.init_pos[param.legIndex][2] = param.legTrace[param.legIndex * 3 + 2][param.data_num - 1];
+            param.init_pos[param.legIndex][0] = param.legTrace[param.legIndex * 3][param.data_num - 1] / 1000;
+            param.init_pos[param.legIndex][1] = param.legTrace[param.legIndex * 3 + 1][param.data_num - 1] / 1000;
+            param.init_pos[param.legIndex][2] = param.legTrace[param.legIndex * 3 + 2][param.data_num - 1] / 1000;
         }
         ofstream outFile("RobotParam", ios::trunc);
         if(!outFile.is_open()){

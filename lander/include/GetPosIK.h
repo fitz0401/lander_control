@@ -1,14 +1,14 @@
 /********************************************************/
-/*Func:      »ã×Ü³ÌÐòÍ·ÎÄ¼þ                             */
+/*Func:      ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½Í·ï¿½Ä¼ï¿½                             */
 /*Version:   1.0                                        */
-/*Author:    ÐìºÆ    ·ûÔó        2022/02/18             */
+/*Author:    ï¿½ï¿½ï¿½    ï¿½ï¿½ï¿½ï¿½        2022/02/18             */
 /********************************************************/
 
 #ifndef _GETPOSIK_H_
 #define _GETPOSIK_H_
 
 #pragma once
-#include "TransMechPositionIK.hpp"
+#include "TransMechPositionIK.h"
 #include "WalkLegExeLegIk.h"
 
 class myGetPosIK {
