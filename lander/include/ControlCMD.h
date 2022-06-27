@@ -98,6 +98,17 @@ namespace ControlCMD
         explicit MovePlan(const std::string &name = "mvplan");
     };
 
+    class PlanFoot :public aris::core::CloneObject<PlanFoot, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~PlanFoot();
+        explicit PlanFoot(const std::string &name = "planfoot");
+    };
+
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;
 }
 

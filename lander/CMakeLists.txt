@@ -65,10 +65,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 # Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   MovePoint.srv
-# )
+add_service_files(
+  FILES
+  mv_msgs.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -78,10 +78,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 # Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -135,8 +135,9 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/movemessage.cpp
 # )
-add_executable(lander  src/lander.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
-add_executable(client scripts/client.cpp)
+add_executable(lander_cmd  src/lander_cmd.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
+add_executable(lander_plan  src/lander_plan.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
+
 # add_executable(mytestserver src/mytestserver.cpp)
 # add_executable(mytestclient src/mytestclient.cpp)
 # add_executable(mytest_srv_client src/mytest_srv_client.cpp)
@@ -173,13 +174,18 @@ add_executable(client scripts/client.cpp)
 
 # target_include_directories(movemessage PUBLIC  ${PROJECT_SOURCE_DIR}/include)
 
-target_link_libraries(lander  ${aris_LIBRARIES}  )
-target_link_libraries(lander  ${catkin_LIBRARIES})
-target_include_directories(lander PUBLIC ${kaanh_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(lander ${kaanh_LIBRARIES} ${aris_LIBRARIES} atomic pthread stdc++fs)
-target_link_libraries(lander ${aris_LIBRARIES} atomic modbus /usr/local/lib/libmodbus.so.5)
+target_link_libraries(lander_cmd  ${aris_LIBRARIES}  )
+target_link_libraries(lander_cmd  ${catkin_LIBRARIES})
+target_include_directories(lander_cmd PUBLIC ${kaanh_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(lander_cmd ${kaanh_LIBRARIES} ${aris_LIBRARIES} atomic pthread stdc++fs)
+target_link_libraries(lander_cmd ${aris_LIBRARIES} atomic modbus /usr/local/lib/libmodbus.so.5)
 
-target_link_libraries(client  ${catkin_LIBRARIES}  )
+target_link_libraries(lander_plan  ${aris_LIBRARIES}  )
+target_link_libraries(lander_plan  ${catkin_LIBRARIES})
+target_include_directories(lander_plan PUBLIC ${kaanh_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(lander_plan ${kaanh_LIBRARIES} ${aris_LIBRARIES} atomic pthread stdc++fs)
+target_link_libraries(lander_plan ${aris_LIBRARIES} atomic modbus /usr/local/lib/libmodbus.so.5)
+
 #############
 ## Install ##
 #############

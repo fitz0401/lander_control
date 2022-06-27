@@ -9,6 +9,9 @@
 #include "math.h"
 #include "WalkLegExeLegIk.h"
 #include "Param.h"
+#include <ros/ros.h>
+#include "std_msgs/String.h"
+#include "lander/mv_msgs.h"
 
 using namespace aris::dynamic;
 using namespace aris::plan;
@@ -101,7 +104,7 @@ namespace ControlCMD
 	}
 
     //Move Single Motor (Unit: angle): for test using
-    struct MoveLegParam
+    struct MoveLegParamPlanFoot
         {
             double pos;
             double time;
@@ -286,7 +289,7 @@ namespace ControlCMD
     }
     auto GetPos::collectNrt()->void {
         double cur_pos[4][3];
-        ifstream inFile("RobotParam", ios::in);
+        ifstream inFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
         if (!inFile.is_open()) {
             mout() << "Can not open the parameter file." << endl;
         }
@@ -381,8 +384,8 @@ namespace ControlCMD
 //            //返回0表示正常结束
 //            return totaltime - count();
 
-            auto time = static_cast<int32_t>(24000);
-            auto totaltime = static_cast<int32_t>(12000);    //运行总时间
+            auto time = static_cast<int32_t>(30000);
+            auto totaltime = static_cast<int32_t>(15000);    //运行总时间
             auto &param = std::any_cast<InitParam&>(this->param());
             //第一个周期设置log文件名称，获取当前电机所在位置
             if (count() == 1){
@@ -411,7 +414,7 @@ namespace ControlCMD
                                 {0.441840698, 0.0, -0.445142639},
                                 {0.441840698, 0.0, -0.445142639},
                                 {0.441840698, 0.0, -0.445142639}};
-        ofstream outFile("RobotParam", ios::trunc);
+        ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
@@ -940,7 +943,6 @@ namespace ControlCMD
             "</Command>");
     }
 
-
     struct MoveLineParam
     {
         std::vector<bool> active_motor;			//目标电机
@@ -1008,7 +1010,7 @@ namespace ControlCMD
             }
         }
         // 從文件中讀取電機初始位置
-        ifstream inFile("RobotParam", ios::in);
+        ifstream inFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
         if (!inFile.is_open()) {
             mout() << "Can not open the parameter file." << endl;
         }
@@ -1106,7 +1108,7 @@ namespace ControlCMD
             param.init_pos[param.legIndex][1] += param.y;
             param.init_pos[param.legIndex][2] += param.z;
         }
-        ofstream outFile("RobotParam", ios::trunc);
+        ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
@@ -1146,7 +1148,7 @@ namespace ControlCMD
         std::vector<double> begin_pjs;			//起始位置
         std::vector<double> step_pjs;			//目标位置
 
-        static const int data_num = 360;
+        static const int data_num = 340;
         CubicSpline cs0;
         CubicSpline cs1;
         CubicSpline cs2;
@@ -1216,7 +1218,7 @@ namespace ControlCMD
         }
 
         // 從文件中讀取電機初始位置
-        ifstream inFile1("RobotParam", ios::in);
+        ifstream inFile1("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
         if (!inFile1.is_open()) {
             mout() << "Can not open the parameter file." << endl;
             return;
@@ -1233,12 +1235,12 @@ namespace ControlCMD
         inFile1.close();
 
         // 從文件中讀取足端規劃軌跡
-        ifstream inFile2("/home/kaanh/Desktop/Lander_ws/PlanTrace", ios::in);
+        ifstream inFile2("/home/kaanh/Desktop/Lander_ws/src/PlanTrace", ios::in);
         if (!inFile2.is_open()) {
             mout() << "Can not open the trace file." << endl;
             return;
         }
-        for(int j = 0; j < 360; j++) {
+        for(int j = 0; j < param.data_num; j++) {
             for(int i = 0; i < 12; i++) {
                 inFile2 >> param.legTrace[i][j];
             }
@@ -1313,14 +1315,14 @@ namespace ControlCMD
             if(!param.active_motor[i]) return 0;
         }
         for(Size i = begin_num; i < end_num; i += 3) {
-            // 主電機; i % 3爲腿的序號
-            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i % 3] - param.d1_ori[i % 3]);
+            // 主電機; i / 3爲腿的序號
+            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
             controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
             // 左輔電機
-            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i % 3] - param.theta2_ori[i % 3]);
+            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
             controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
             // 右輔電機
-            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i % 3] - param.theta3[i % 3]);
+            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
             controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
         }
 
@@ -1337,7 +1339,7 @@ namespace ControlCMD
                    << "end_z_leg3:" << std::setprecision(5) << end_point[2][2] << " " << endl;
             mout() << "end_x_leg4:" << std::setprecision(5) << end_point[3][0] << " "
                    << "end_y_leg4:" << std::setprecision(5) << end_point[3][1] << " "
-                   << "end_z_leg4:" << std::setprecision(5) << end_point[4][2] << " " << endl;
+                   << "end_z_leg4:" << std::setprecision(5) << end_point[3][2] << " " << endl;
         }
 
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
@@ -1348,17 +1350,17 @@ namespace ControlCMD
         // 更新全局參數
         if (param.legIndex == 12) {
             for (int i = 0; i < 4; i++) {
-                param.init_pos[i][0] = param.legTrace[i * 3][param.data_num - 1];
-                param.init_pos[i][1] = param.legTrace[i * 3 + 1][param.data_num - 1];
-                param.init_pos[i][2] = param.legTrace[i * 3 + 2][param.data_num - 1];
+                param.init_pos[i][0] = param.legTrace[i * 3][param.data_num - 1] / 1000.0;
+                param.init_pos[i][1] = param.legTrace[i * 3 + 1][param.data_num - 1] / 1000.0;
+                param.init_pos[i][2] = param.legTrace[i * 3 + 2][param.data_num - 1] / 1000.0;
             }
         }
         else {
-            param.init_pos[param.legIndex][0] = param.legTrace[param.legIndex * 3][param.data_num - 1] / 1000;
-            param.init_pos[param.legIndex][1] = param.legTrace[param.legIndex * 3 + 1][param.data_num - 1] / 1000;
-            param.init_pos[param.legIndex][2] = param.legTrace[param.legIndex * 3 + 2][param.data_num - 1] / 1000;
+            param.init_pos[param.legIndex][0] = param.legTrace[param.legIndex * 3][param.data_num - 1] / 1000.0;
+            param.init_pos[param.legIndex][1] = param.legTrace[param.legIndex * 3 + 1][param.data_num - 1] / 1000.0;
+            param.init_pos[param.legIndex][2] = param.legTrace[param.legIndex * 3 + 2][param.data_num - 1] / 1000.0;
         }
-        ofstream outFile("RobotParam", ios::trunc);
+        ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
@@ -1388,6 +1390,181 @@ namespace ControlCMD
             "	</GroupParam>"
             "</Command>");
     }
+
+    struct PlanFootParam
+    {
+        std::vector<bool> active_motor;			//目标电机
+        std::vector<double> begin_pjs;			//起始位置
+        std::vector<double> step_pjs;			//目标位置
+
+        double init_pos[4][3];      
+        //記錄四條腿末端在程序開始執行時的位置，並在執行結束後進行更新
+        double begin_pos[3];        //從init_pos中取出目標腿末端的初始位置
+        int legIndex;
+        double x, y, z;
+        double distance;
+
+        myGetPosIK myPos;
+        int selectIndex[3] = {1,1,2};
+        double d1_ori, theta2_ori, theta3_ori;
+        double d1, theta2, theta3;
+
+        Size totaltime;
+    };
+    auto PlanFoot::prepareNrt()->void
+    {      
+        PlanFootParam param;
+        param.active_motor.clear();
+        param.active_motor.resize(controller()->motorPool().size(), false);
+        param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
+        param.step_pjs.resize(controller()->motorPool().size(), 0.0);
+
+        param.legIndex = 0;
+        param.d1 = 0.0;     param.theta2 = 0.0;     param.theta3 = 0.0;
+        param.d1_ori = 0.0; param.theta2_ori = 0.0; param.theta3_ori = 0.0;
+        param.x = 0.0;      param.y = 0.0;          param.z = 0.0;
+        
+        ros::param::get("leg_index", param.legIndex);
+        ros::param::get("x_motion", param.x);
+        ros::param::get("y_motion", param.y);
+        ros::param::get("z_motion", param.z);
+        //解析输入参数
+        if (param.legIndex == 12){
+            std::fill(param.active_motor.begin(), param.active_motor.end(), true);
+        }
+        else {
+            param.active_motor.at(3 * param.legIndex) = true;
+            param.active_motor.at(3 * param.legIndex + 1) = true;
+            param.active_motor.at(3 * param.legIndex + 2) = true;
+        }
+        // 從文件中讀取電機初始位置
+        ifstream inFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
+        if (!inFile.is_open()) {
+            mout() << "Can not open the parameter file." << endl;
+        }
+        mout() << "Start position of four feet:" << endl;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 3; j++) {
+                inFile >> param.init_pos[i][j];
+                mout() << param.init_pos[i][j] << " ";
+            }
+            mout() << endl;
+        }
+        inFile.close();
+
+        param.begin_pos[0] = param.init_pos[param.legIndex % 4][0];
+        param.begin_pos[1] = param.init_pos[param.legIndex % 4][1];
+        param.begin_pos[2] = param.init_pos[param.legIndex % 4][2];
+        param.distance = sqrt(pow(param.x, 2) + pow(param.y, 2) + pow(param.z, 2));
+        mout() << "distance(mm): " << 1000 * param.distance << endl;
+        mout() << "legIndex: " << param.legIndex << endl;
+        this->param() = param;
+        std::vector<std::pair<std::string, std::any>> ret_value;
+        ret() = ret_value;
+    }
+    auto PlanFoot::executeRT()->int
+    {
+        auto &param = std::any_cast<PlanFootParam&>(this->param());
+        // 所有腿都運動
+        Size begin_num, end_num;
+        if (param.legIndex == 12) {
+            begin_num = 0;
+            end_num = 12;
+        }
+        // 單腿運動
+        else{
+            begin_num = param.legIndex * 3;
+            end_num = param.legIndex * 3 + 3;
+        }
+        double next_pos, next_vel, next_acc;
+        //第一个周期设置log文件名称，获取当前电机所在位置
+        if (count() == 1){
+            ecMaster()->logFileRawName("20220224_test02");
+            for (Size i = begin_num; i < end_num; ++i) {
+                if (param.active_motor[i]) {
+                    param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
+                    mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
+                    param.myPos.fromS1GetMotorAngle(param.begin_pos, param.selectIndex, param.d1_ori, param.theta2_ori, param.theta3_ori);
+                }
+            }
+            moveAbsolute(count(), 0, param.distance, 0.00001, 0.000001, 0.000001, next_pos, next_vel, next_acc, param.totaltime);
+            mout() << "totaltime(ms): " << param.totaltime << endl;
+        }
+
+        moveAbsolute(count(), 0, param.distance, 0.00001, 0.000001, 0.000001, next_pos, next_vel, next_acc, param.totaltime);
+        double end_point[3] = {param.begin_pos[0] + next_pos / param.distance * param.x,
+                               param.begin_pos[1] + next_pos / param.distance * param.y,
+                               param.begin_pos[2] + next_pos / param.distance * param.z};
+        param.myPos.fromS1GetMotorAngle(end_point, param.selectIndex, param.d1, param.theta2, param.theta3);
+        for(Size i = begin_num; i < end_num; ++i) {
+            if(!param.active_motor[i]) return 0;
+        }
+
+        for(Size i = begin_num; i < end_num; i += 3) {
+            // 主電機
+            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1 - param.d1_ori);
+            controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
+            // 左輔電機
+            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2 - param.theta2_ori);
+            controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
+            // 右輔電機
+            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori - param.theta3);
+            controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
+        }
+
+        //打印
+        if(count() % 1000 == 0){
+            mout() << "next_pos(mm): " << std::setprecision(10) << 1000 * next_pos << endl;
+            mout() << "end_x:" << std::setprecision(5) << end_point[0] << " "
+                   << "end_y:" << std::setprecision(5) << end_point[1] << " "
+                   << "end_z:" << std::setprecision(5) << end_point[2] << " " << endl;
+        }
+
+        
+        //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
+        return param.totaltime - count();
+    }
+    auto PlanFoot::collectNrt()->void {
+        auto &param = std::any_cast<PlanFootParam&>(this->param());
+        // 更新全局參數
+        if (param.legIndex == 12) {
+            for (int i = 0; i < 4; i++)     param.init_pos[i][0] += param.x;
+            for (int i = 0; i < 4; i++)     param.init_pos[i][1] += param.y;
+            for (int i = 0; i < 4; i++)     param.init_pos[i][2] += param.z;
+        }
+        else {
+            param.init_pos[param.legIndex][0] += param.x;
+            param.init_pos[param.legIndex][1] += param.y;
+            param.init_pos[param.legIndex][2] += param.z;
+        }
+        ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
+        if(!outFile.is_open()){
+            mout() << "Can not open the parameter file." << endl;
+        }
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 2; j++) {
+                outFile << param.init_pos[i][j] << " ";
+            }
+            outFile << param.init_pos[i][2] << endl;
+        }
+        outFile.close();
+        mout() << "Finish motion." << endl;
+        ros::param::set("ifFinishFlag", true);  
+    }
+    PlanFoot::~PlanFoot() = default;
+    PlanFoot::PlanFoot(const std::string &name)
+    {
+        //构造函数参数说明，构造函数通过xml的格式定义本条指令的接口，name表示参数名，default表示输入参数，abbreviation表示参数名的缩写(缩写只能单个字符)
+        //1 GroupParam下面的各个节点都是输入参数，如果没有给定会使用默认值
+        //2 UniqueParam下面的各个节点互斥，有且只能使用其中的一个
+        //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
+        aris::core::fromXmlString(command(),
+            "<Command name=\"planfoot\">"
+            "	<GroupParam>"
+            "	</GroupParam>"
+            "</Command>");
+    }
+
 
 	ARIS_REGISTRATION
 	{
@@ -1422,6 +1599,10 @@ namespace ControlCMD
         aris::core::class_<MovePlan>("MovePlan")
             .inherit<Plan>()
             ;
+
+        aris::core::class_<PlanFoot>("PlanFoot")
+        .inherit<Plan>()
+        ;
 	}
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>
@@ -1442,6 +1623,8 @@ namespace ControlCMD
         plan_root->planPool().add<ControlCMD::MoveRobot>();
         plan_root->planPool().add<ControlCMD::MoveLine>();
         plan_root->planPool().add<ControlCMD::MovePlan>();
+
+        plan_root->planPool().add<ControlCMD::PlanFoot>();
 		return plan_root;
 	}
 }

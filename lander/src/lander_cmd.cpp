@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <ControlCMD.h>
 #include <ros/ros.h>
+#include "lander/mv_msgs.h"
 
 using namespace aris::dynamic;
 auto xmlpath = "/home/kaanh/Desktop/Lander_ws/src/lander/kaanh.xml";	//获取当前工程所在的路径
@@ -13,7 +14,7 @@ const std::string xmlfile = "kaanh.xml";		//控制配置文件名称
 int main(int argc, char *argv[])
 {
 	auto&cs = aris::server::ControlServer::instance();
-	aris::core::fromXmlFile(cs, xmlpath);		//加载kaanh.xml配置
+    aris::core::fromXmlFile(cs, xmlpath);		//加载kaanh.xml配置
     cs.resetPlanRoot(ControlCMD::createPlanRoot().release());//加载cmd配置
 //    aris::core::toXmlFile(cs, xmlpath);		   //save kaanh.xml配置
     cs.init();									//初始化
@@ -21,10 +22,10 @@ int main(int argc, char *argv[])
 
     std::cout << "start" <<std::endl;
 
-    cs.executeCmd("ds");
+    cs.executeCmd("ds");  
     cs.executeCmd("md");
     cs.executeCmd("en");
-
+    
 	//开启WebSocket/socket服务器//
     cs.open();
 

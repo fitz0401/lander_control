@@ -1,0 +1,8 @@
+# 客户端请求
+int32 leg
+float64 x_motion
+float64 y_motion
+float64 z_motion
+---
+# 服务器响应发送的数据
+bool isFinish
