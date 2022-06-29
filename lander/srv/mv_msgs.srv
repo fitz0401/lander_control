@@ -1,8 +1,17 @@
 # 客户端请求
+# 0:getpos; 1:init; 2:planfoot; 3:planmotion
+int32 command_index
+# For planfoot
 int32 leg
 float64 x_motion
 float64 y_motion
 float64 z_motion
+# For planmotion
+int32 data_nums
+geometry_msgs/Point[] foot1_trace
+geometry_msgs/Point[] foot2_trace 
+geometry_msgs/Point[] foot3_trace 
+geometry_msgs/Point[] foot4_trace  
 ---
 # 服务器响应发送的数据
 bool isFinish

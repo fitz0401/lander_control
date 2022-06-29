@@ -10,6 +10,7 @@ namespace ControlCMD
 	using Size = std::size_t;
 	constexpr double PI = 3.141592653589793;
     
+    // 命令行指令，lander_cmd项目使用
     class MoveS :public aris::core::CloneObject<MoveS, aris::plan::Plan>
 	{
 	public:
@@ -98,6 +99,7 @@ namespace ControlCMD
         explicit MovePlan(const std::string &name = "mvplan");
     };
 
+    // 通讯规划指令，lander_plan项目使用
     class PlanFoot :public aris::core::CloneObject<PlanFoot, aris::plan::Plan>
     {
     public:
@@ -107,6 +109,17 @@ namespace ControlCMD
 
         virtual ~PlanFoot();
         explicit PlanFoot(const std::string &name = "planfoot");
+    };
+
+    class PlanMotion :public aris::core::CloneObject<PlanMotion, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~PlanMotion();
+        explicit PlanMotion(const std::string &name = "planmotion");
     };
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;

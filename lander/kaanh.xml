@@ -759,22 +759,22 @@
 
     <Controller>
         <MotorPoolObject>
-            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.9391479492" home_pos="0" vel_factor="1" slave="0"/>
+            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.9284667969" home_pos="0" vel_factor="1" slave="0"/>
             <!-- <EthercatMotor max_pos="500" min_pos="-500" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0" home_pos="0" vel_factor="1" slave="0"/> -->
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="4080.874045" home_pos="0" vel_factor="1" slave="1"/>
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="4058.572035" home_pos="0" vel_factor="1" slave="2"/>
 
-            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.6513671875" home_pos="0" vel_factor="1" slave="3"/>
+            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.6382446289" home_pos="0" vel_factor="1" slave="3"/>
             <!-- <EthercatMotor max_pos="500" min_pos="-500" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0" home_pos="0" vel_factor="1" slave="3"/> -->
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="-4108.507976" home_pos="0" vel_factor="1" slave="4"/>
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="-4079.287975" home_pos="0" vel_factor="1" slave="5"/>
 
-            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="3.488037109" home_pos="0" vel_factor="1" slave="6"/>
+            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.4838867188" home_pos="0" vel_factor="1" slave="6"/>
             <!-- <EthercatMotor max_pos="500" min_pos="-500" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0" home_pos="0" vel_factor="1" slave="6"/> -->
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="76.81942268" home_pos="0" vel_factor="1" slave="7"/>
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="4083.838295" home_pos="0" vel_factor="1" slave="8"/>
 
-            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="11.47192383" home_pos="0" vel_factor="1" slave="9"/>
+            <EthercatMotor max_pos="0.01" min_pos="-150" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0.4720458984" home_pos="0" vel_factor="1" slave="9"/>
             <!-- <EthercatMotor max_pos="500" min_pos="-500" max_vel="50" min_vel="-50" max_acc="2000" min_acc="-2000" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="16384" pos_offset="0" home_pos="0" vel_factor="1" slave="9"/> -->
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="-23.85606173" home_pos="0" vel_factor="1" slave="10"/>
             <EthercatMotor max_pos="1.15" min_pos="-0.01" max_vel="4" min_vel="-4" max_acc="500" min_acc="-500" max_pos_following_error="1" max_vel_following_error="0.5" pos_factor="260759.67901604" pos_offset="4080.647859" home_pos="0" vel_factor="1" slave="11"/>
