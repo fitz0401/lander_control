@@ -22,15 +22,15 @@ namespace ControlCMD
 		explicit MoveS(const std::string &name = "mvs");
 	};
 
-    class MoveLeg :public aris::core::CloneObject<MoveLeg, aris::plan::Plan>
+    class MoveMotor :public aris::core::CloneObject<MoveMotor, aris::plan::Plan>
     {
     public:
         auto virtual prepareNrt()->void;
         auto virtual executeRT()->int;
         auto virtual collectNrt()->void;
 
-        virtual ~MoveLeg();
-        explicit MoveLeg(const std::string &name = "mvleg");
+        virtual ~MoveMotor();
+        explicit MoveMotor(const std::string &name = "mvm");
     };
 
     class GetPos :public aris::core::CloneObject<GetPos, aris::plan::Plan>
@@ -55,15 +55,15 @@ namespace ControlCMD
         explicit FindHome(const std::string &name = "init");
     };
 
-    class MoveSingleLeg :public aris::core::CloneObject<MoveSingleLeg, aris::plan::Plan>
+    class MoveLeg :public aris::core::CloneObject<MoveLeg, aris::plan::Plan>
     {
     public:
         auto virtual prepareNrt()->void;
         auto virtual executeRT()->int;
         auto virtual collectNrt()->void;
 
-        virtual ~MoveSingleLeg();
-        explicit MoveSingleLeg(const std::string &name = "mvsleg");
+        virtual ~MoveLeg();
+        explicit MoveLeg(const std::string &name = "mvleg");
     };
 
     class MoveRobot :public aris::core::CloneObject<MoveRobot, aris::plan::Plan>
@@ -97,29 +97,6 @@ namespace ControlCMD
 
         virtual ~MovePlan();
         explicit MovePlan(const std::string &name = "mvplan");
-    };
-
-    // 通讯规划指令，lander_plan项目使用
-    class PlanFoot :public aris::core::CloneObject<PlanFoot, aris::plan::Plan>
-    {
-    public:
-        auto virtual prepareNrt()->void;
-        auto virtual executeRT()->int;
-        auto virtual collectNrt()->void;
-
-        virtual ~PlanFoot();
-        explicit PlanFoot(const std::string &name = "planfoot");
-    };
-
-    class PlanMotion :public aris::core::CloneObject<PlanMotion, aris::plan::Plan>
-    {
-    public:
-        auto virtual prepareNrt()->void;
-        auto virtual executeRT()->int;
-        auto virtual collectNrt()->void;
-
-        virtual ~PlanMotion();
-        explicit PlanMotion(const std::string &name = "planmotion");
     };
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;

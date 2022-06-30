@@ -1017,19 +1017,6 @@
             <Clear name="plan">
                 <Command name="cl"/>
             </Clear>
-            <MoveS name="plan">
-                <Command name="mvs">
-                    <GroupParam name="group_param">
-                        <Param name="pos" default="current_pos"/>
-                        <Param name="time" abbreviation="t" default="1.0"/>
-                        <Param name="timenum" abbreviation="n" default="2"/>
-                        <UniqueParam name="unique_param" default="all">
-                            <Param name="all" abbreviation="a"/>
-                            <Param name="motion_id" abbreviation="m" default="0"/>
-                        </UniqueParam>
-                    </GroupParam>
-                </Command>
-            </MoveS>
         </PlanPoolObject>
     </PlanRoot>
     <InterfacePoolObject>

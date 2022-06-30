@@ -7,11 +7,19 @@ float64 x_motion
 float64 y_motion
 float64 z_motion
 # For planmotion
-int32 data_nums
-geometry_msgs/Point[] foot1_trace
-geometry_msgs/Point[] foot2_trace 
-geometry_msgs/Point[] foot3_trace 
-geometry_msgs/Point[] foot4_trace  
+int32 data_num
+float64[] foot1_trace_x
+float64[] foot1_trace_y
+float64[] foot1_trace_z
+float64[] foot2_trace_x
+float64[] foot2_trace_y
+float64[] foot2_trace_z
+float64[] foot3_trace_x
+float64[] foot3_trace_y
+float64[] foot3_trace_z
+float64[] foot4_trace_x
+float64[] foot4_trace_y
+float64[] foot4_trace_z 
 ---
 # 服务器响应发送的数据
 bool isFinish

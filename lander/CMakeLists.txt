@@ -138,7 +138,7 @@ include_directories(
 #   src/${PROJECT_NAME}/movemessage.cpp
 # )
 add_executable(lander_cmd  src/lander_cmd.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
-add_executable(lander_plan  src/lander_plan.cpp src/ControlCMD.cpp include/ControlCMD.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
+add_executable(lander_plan  src/lander_plan.cpp src/ControlPlan.cpp include/ControlPlan.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
 
 # add_executable(mytestserver src/mytestserver.cpp)
 # add_executable(mytestclient src/mytestclient.cpp)
