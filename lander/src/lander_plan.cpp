@@ -86,10 +86,10 @@ int main(int argc, char *argv[])
     cs.start();                                 //不注释，则程序运行时开启控制器服务
 
     std::cout << "start" <<std::endl;
-    cs.executeCmd("ds");    
-    cs.executeCmd("md");
-    cs.executeCmd("en");
-	//开启WebSocket/socket服务器//
+    cs.executeCmd("ds --limit_time=20000");    
+    cs.executeCmd("md --limit_time=20000");
+    cs.executeCmd("en --limit_time=20000");
+	// 开启WebSocket/socket服务器//
     cs.open();
     
     // 开启ros端信号接受程序
