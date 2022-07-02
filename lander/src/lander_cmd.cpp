@@ -22,9 +22,9 @@ int main(int argc, char *argv[])
 
     std::cout << "start" <<std::endl;
 
-    cs.executeCmd("ds");  
-    cs.executeCmd("md");
-    cs.executeCmd("en");
+    cs.executeCmd("ds --limit_time=20000");  
+    cs.executeCmd("md --limit_time=20000");
+    cs.executeCmd("en --limit_time=20000");
     
 	//开启WebSocket/socket服务器//
     cs.open();

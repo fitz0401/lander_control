@@ -74,10 +74,14 @@ namespace ControlCMD
 	}
     auto MoveS::executeRT()->int
 	{
+        if (count() == 1) {
+            controller()->motorPool().at(1).setModeOfOperation(10);
+            controller()->motorPool().at(1).enable();
+        }
         auto &param = std::any_cast<MoveSParam&>(this->param());
 		auto time = static_cast<int32_t>(param.time * 1000);		//运行周期
         auto totaltime = static_cast<int32_t>(param.timenum * time);//运行总时       
-        controller()->motorPool().at(0).setTargetToq(0.001);
+        controller()->motorPool().at(1).setTargetToq(-30);
 
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return totaltime - count();

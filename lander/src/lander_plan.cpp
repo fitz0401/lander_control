@@ -49,6 +49,7 @@ bool doReq(lander::mv_msgs::Request& req,
     // 3:执行运动规划执行，每次接收四个足端运动轨迹数组
     else if (req.command_index == 3) {
         ROS_INFO("————————正在沿规划轨迹运动————————");
+        ros::param::set("data_num", req.data_num);
         // 将目标轨迹点存入文件[因为ros全局参数不易设置数组]
         std::ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/ROSPlanTrace", std::ios::trunc);
         if(!outFile.is_open()){
@@ -66,6 +67,7 @@ bool doReq(lander::mv_msgs::Request& req,
         for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_x[i]<< " ";  outFile << std::endl;
         for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_y[i]<< " ";  outFile << std::endl;
         for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_z[i]<< " ";  outFile << std::endl;
+        outFile.close();
         cs.executeCmd("planmotion");
     }
     
@@ -107,4 +109,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-

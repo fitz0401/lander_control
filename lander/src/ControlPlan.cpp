@@ -429,6 +429,7 @@ namespace ControlPlan
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 inFile1 >> param.init_pos[i][j];
+                mout() << param.init_pos[i][j] << " ";
                 param.begin_pos[i][j] = param.init_pos[i][j];
             }
             mout() << endl;
