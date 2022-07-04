@@ -45,7 +45,7 @@ namespace ControlRTPlan
     auto WaitingPlan::executeRT()->int {       
         auto &plan_param = std::any_cast<WalkingPlanParam&>(this->param());
         // 数据收发
-        if (count() % 50 == 0) {
+        if (count() % 100 == 0) {
             aris::core::MsgFix<1024> plan_msg_recv;
             pipe_global_planMsg.recvMsg(plan_msg_recv);    
             plan_msg_recv.pasteStruct(plan_param);
@@ -58,7 +58,7 @@ namespace ControlRTPlan
                 pipe_global_planMsg.sendMsg(plan_msg_executed);
                 // 发送状态数据
                 WalkingStateParam state_param;
-                state_param.state_val = 123;
+                state_param.state_val = count();
                 aris::core::Msg state_msg;
                 state_msg.copyStruct(state_param);
                 pipe_global_stateMsg.sendMsg(state_msg);
@@ -113,10 +113,8 @@ namespace ControlRTPlan
                 break;
             }
         }
-        //ret() = state_param.state_val;
-        ros::param::set("state_val", state_param.state_val);
-
         this->option() = Plan::NOT_RUN_EXECUTE_FUNCTION | Plan::NOT_RUN_COLLECT_FUNCTION;
+        ret() = state_param.state_val;
     }
     auto PlanMsg::executeRT()->int {return 0;}
     auto PlanMsg::collectNrt()->void {}

@@ -18,23 +18,19 @@ const std::string xmlfile = "kaanh.xml";		//控制配置文件名称
 auto&cs = aris::server::ControlServer::instance();    
 ros::Publisher pub;
 
-void doMsgNew(const std_msgs::String::ConstPtr& msg_p){
+void doMsg(const std_msgs::String::ConstPtr& msg_p){
     setlocale(LC_ALL,"");
-    int state_val = 0;
-    //int state_val = msg_p->data;
-    //cs.executeCmd("PlanMsg --motion_val=state_val");
-    
-    cs.executeCmd("PlanMsg --motion_val=456");
-    ros::param::get("state_val", state_val);
-    std::string msg = to_string(state_val);
-    pub.publish(msg);
+    // 回调函数拿到状态返回值
+    cs.executeCmd("PlanMsg --motion_val=" + msg_p->data, [](aris::plan::Plan& plan){
+        std::string msg = to_string(std::any_cast<int>(plan.ret()));
+        pub.publish(msg);
+    });
 }
-
 
 int main(int argc, char *argv[])
 {
     aris::core::fromXmlFile(cs, xmlpath);		//加载kaanh.xml配置
-    cs.resetPlanRoot(ControlPlan::createPlanRoot().release());//加载cmd配置
+    cs.resetPlanRoot(ControlRTPlan::createPlanRoot().release());//加载cmd配置
 
     cs.init();									//初始化
     cs.start();                                 //不注释，则程序运行时开启控制器服务
@@ -53,7 +49,7 @@ int main(int argc, char *argv[])
     ros::param::set("state_val", 100);
     sleep(8);
     cs.executeCmd("WaitingPlan");        
-    ros::Subscriber sub = nh.subscribe<std_msgs::String>("control",10,doMsgNew);
+    ros::Subscriber sub = nh.subscribe<std_msgs::String>("control",10,doMsg);
     ros::spin();//循环读取接收的数据，并调用回调函数处理
 
     return 0;

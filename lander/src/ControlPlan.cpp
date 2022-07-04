@@ -385,6 +385,7 @@ namespace ControlPlan
         CubicSpline cs10;
         CubicSpline cs11;
         // 输入轨迹点数上限为100
+        aris::core::Matrix trace_mat;
         double legTrace[12][100];
         double deltaT[100];
 
@@ -409,7 +410,12 @@ namespace ControlPlan
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
         param.step_pjs.resize(controller()->motorPool().size(), 0.0);
 
-        // 从ROS全局参数中获取通讯系统传来的指令
+        // 从ros中获取通讯系统传来的指令，通过解析指令参数实现
+        for (auto &p : cmdParams())	{
+            if (p.first == "trace_mat") {
+                param.trace_mat = matrixParam(p.first);
+            }
+        }
         ros::param::get("data_num", param.data_num);
         std::fill(param.active_motor.begin(), param.active_motor.end(), true);
 
@@ -436,18 +442,12 @@ namespace ControlPlan
         }
         inFile1.close();
 
-        // 从文件中读取目标轨迹
-        ifstream inFile2("/home/kaanh/Desktop/Lander_ws/src/ROSPlanTrace", ios::in);
-        if (!inFile2.is_open()) {
-            mout() << "Can not open the ROSPlanTrace file." << endl;
-            return;
-        }
+        // 获得目标轨迹
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < param.data_num; j++) {
-                inFile2 >> param.legTrace[i][j];
+                param.legTrace[i][j] = param.trace_mat(i, j);
             }
         }
-        inFile2.close();
 
         this->param() = param;
         std::vector<std::pair<std::string, std::any>> ret_value;
@@ -569,6 +569,7 @@ namespace ControlPlan
         //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
         aris::core::fromXmlString(command(),
             "<Command name=\"planmotion\">"
+            "		<Param name=\"trace_mat\" abbreviation=\"mat\"/>"
             "</Command>");
     }
 

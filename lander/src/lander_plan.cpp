@@ -50,25 +50,22 @@ bool doReq(lander::mv_msgs::Request& req,
     else if (req.command_index == 3) {
         ROS_INFO("————————正在沿规划轨迹运动————————");
         ros::param::set("data_num", req.data_num);
-        // 将目标轨迹点存入文件[因为ros全局参数不易设置数组]
-        std::ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/ROSPlanTrace", std::ios::trunc);
-        if(!outFile.is_open()){
-            std::cout << "Can not open the ROSPlanTrace file." << std::endl;
+        aris::core::Matrix trace_mat(12, req.data_num, 0.0);
+        for (int i = 0; i < req.data_num; i++) {
+            trace_mat(0, i) = req.foot1_trace_x[i];
+            trace_mat(1, i) = req.foot1_trace_y[i];
+            trace_mat(2, i) = req.foot1_trace_z[i];
+            trace_mat(3, i) = req.foot2_trace_x[i];
+            trace_mat(4, i) = req.foot2_trace_y[i];
+            trace_mat(5, i) = req.foot2_trace_z[i];
+            trace_mat(6, i) = req.foot3_trace_x[i];
+            trace_mat(7, i) = req.foot3_trace_y[i];
+            trace_mat(8, i) = req.foot3_trace_z[i];
+            trace_mat(9, i) = req.foot4_trace_x[i];
+            trace_mat(10, i) = req.foot4_trace_y[i];
+            trace_mat(11, i) = req.foot4_trace_z[i];
         }
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot1_trace_x[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot1_trace_y[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot1_trace_z[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot2_trace_x[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot2_trace_y[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot2_trace_z[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot3_trace_x[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot3_trace_y[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot3_trace_z[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_x[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_y[i]<< " ";  outFile << std::endl;
-        for (int i = 0; i < req.data_num; i++)  outFile << req.foot4_trace_z[i]<< " ";  outFile << std::endl;
-        outFile.close();
-        cs.executeCmd("planmotion");
+        cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
     }
     
     // 等待着陆器将指令运行完毕
