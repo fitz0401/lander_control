@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     // 3.创建 ROS 句柄
     ros::NodeHandle nh;
     // 4.创建 服务 对象
-    ros::ServiceServer server = nh.advertiseService("PlanMsg",doReq);
+    ros::ServiceServer server = nh.advertiseService("mv_msgs",doReq);
     ROS_INFO("服务已经启动....");
     //     5.回调函数处理请求并产生响应
     //     6.由于请求有多个，需要调用 ros::spin()

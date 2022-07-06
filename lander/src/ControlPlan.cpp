@@ -84,7 +84,7 @@ namespace ControlPlan
             mout() << endl;
         }
         inFile.close();
-        ros::param::set("ifFinishFlag", true);
+        ros::param::set("isFinishFlag", true);
     }
     GetPosPlan::~GetPosPlan() = default;
     GetPosPlan::GetPosPlan(const std::string &name)
@@ -172,7 +172,7 @@ namespace ControlPlan
         }
         outFile.close();
         mout() << "Finish Init" << endl;
-        ros::param::set("ifFinishFlag", true); 
+        ros::param::set("isFinishFlag", true); 
     }
     FindHomePlan::~FindHomePlan() = default;
     FindHomePlan::FindHomePlan(const std::string &name)
@@ -348,7 +348,7 @@ namespace ControlPlan
         }
         outFile.close();
         mout() << "Finish motion." << endl;
-        ros::param::set("ifFinishFlag", true); 
+        ros::param::set("isFinishFlag", true); 
     }
     PlanFoot::~PlanFoot() = default;
     PlanFoot::PlanFoot(const std::string &name)
@@ -417,6 +417,7 @@ namespace ControlPlan
             }
         }
         ros::param::get("data_num", param.data_num);
+        mout() << "data_num: " << param.data_num << endl;
         std::fill(param.active_motor.begin(), param.active_motor.end(), true);
 
         // 每一步用時0.5s,可在此處修改
@@ -558,7 +559,7 @@ namespace ControlPlan
         }
         outFile.close();
         mout() << "Finish motion." << endl;
-        ros::param::set("ifFinishFlag", true); 
+        ros::param::set("isFinishFlag", true); 
     }
     PlanMotion::~PlanMotion() = default;
     PlanMotion::PlanMotion(const std::string &name)

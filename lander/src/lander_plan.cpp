@@ -20,9 +20,9 @@ auto&cs = aris::server::ControlServer::instance();
 // 收到控制指令后所要进行的动作。bool 返回值由于标志是否处理成功
 bool doReq(lander::mv_msgs::Request& req,
           lander::mv_msgs::Response& resp){
-    // ROS全局参数中ifFinishFlag设置为false，指令执行完后会被设置为true
-    ros::param::set("ifFinishFlag",false);
-    bool ifFinishFlag = false;
+    // ROS全局参数中isFinishFlag设置为false，指令执行完后会被设置为true
+    ros::param::set("isFinishFlag",false);
+    bool isFinishFlag = false;
 
     // 解析请求命令
     // 0:执行getpos：开机时检查编码器位置信息和足端位置信息是否正确
@@ -69,8 +69,8 @@ bool doReq(lander::mv_msgs::Request& req,
     }
     
     // 等待着陆器将指令运行完毕
-    while(!ifFinishFlag){
-        ros::param::get("ifFinishFlag",ifFinishFlag);
+    while(!isFinishFlag){
+        ros::param::get("isFinishFlag",isFinishFlag);
     }
     resp.isFinish = true;
     return true;
