@@ -135,6 +135,39 @@ namespace ControlRTPlan
     }
 
 
+    auto GetState::prepareNrt()->void
+    {
+        WalkingPlanParam plan_param;
+        this->param() = plan_param;
+    }
+    auto GetState::executeRT()->int {       
+        auto &plan_param = std::any_cast<WalkingPlanParam&>(this->param());
+        // 数据收发
+        if (count() % 50 == 0) {
+            for (int i=0; i<3; i++){
+                mout() << "motor" << i << " position: " << controller()->motorPool()[i].actualPos() << " ";
+                mout() << " velocity: " << controller()->motorPool()[i].actualVel() << " ";
+                mout() << " Toque: "    << controller()->motorPool()[i].actualToq() << " ";
+                mout() << " Current: "  << controller()->motorPool()[i].actualCur() << " ";
+                mout() << endl;
+            }        
+        }
+        return 1;
+    }
+    auto GetState::collectNrt()->void {}
+    GetState::~GetState() = default;
+    GetState::GetState(const std::string &name)
+    {
+        //构造函数参数说明，构造函数通过xml的格式定义本条指令的接口，name表示参数名，default表示输入参数，abbreviation表示参数名的缩写(缩写只能单个字符)
+        //1 GroupParam下面的各个节点都是输入参数，如果没有给定会使用默认值
+        //2 UniqueParam下面的各个节点互斥，有且只能使用其中的一个
+        //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
+        aris::core::fromXmlString(command(),
+            "<Command name=\"getstate\">"
+            "</Command>");
+    }
+   
+
 	ARIS_REGISTRATION
 	{
         aris::core::class_<WaitingPlan>("WaitingPlan")
@@ -142,6 +175,10 @@ namespace ControlRTPlan
         ;
 
         aris::core::class_<PlanMsg>("PlanMsg")
+        .inherit<Plan>()
+        ;
+
+        aris::core::class_<GetState>("GetState")
         .inherit<Plan>()
         ;
 	}
@@ -158,6 +195,7 @@ namespace ControlRTPlan
 
         plan_root->planPool().add<ControlRTPlan::WaitingPlan>();
         plan_root->planPool().add<ControlRTPlan::PlanMsg>();
+        plan_root->planPool().add<ControlRTPlan::GetState>();
 		return plan_root;
 	}
 }

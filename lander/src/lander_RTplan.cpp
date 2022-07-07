@@ -43,15 +43,21 @@ int main(int argc, char *argv[])
     cs.open();
     
     // 初始化 ROS 节点:命名(唯一)
-    ros::init(argc,argv,"Lander");
-    ros::NodeHandle nh;
-    pub = nh.advertise<std_msgs::String>("state",2);
-    ros::param::set("state_val", 100);
-    sleep(8);
-    cs.executeCmd("WaitingPlan");        
-    ros::Subscriber sub = nh.subscribe<std_msgs::String>("control",10,doMsg);
-    ros::spin();//循环读取接收的数据，并调用回调函数处理
+    // ros::init(argc,argv,"Lander");
+    // ros::NodeHandle nh;
+    // pub = nh.advertise<std_msgs::String>("state",2);
+    // ros::param::set("state_val", 100);
+    // sleep(8);
+    // cs.executeCmd("WaitingPlan");        
+    // ros::Subscriber sub = nh.subscribe<std_msgs::String>("control",10,doMsg);
+    // ros::spin();//循环读取接收的数据，并调用回调函数处理
 
+    cs.executeCmd("getstate");
+
+
+    while (1)
+    {}
+    
     return 0;
 }
 

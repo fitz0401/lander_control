@@ -32,6 +32,17 @@ namespace ControlRTPlan
         explicit PlanMsg(const std::string &name = "PlanMsg");
     };
 
+     class GetState :public aris::core::CloneObject<GetState, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+        
+        virtual ~GetState();
+        explicit GetState(const std::string &name = "GetState");
+    };
+
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;
 }
 
