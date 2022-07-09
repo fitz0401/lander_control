@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <ControlCMD.h>
 #include <ros/ros.h>
-#include "lander/mv_msgs.h"
 
 using namespace aris::dynamic;
 auto xmlpath = "/home/kaanh/Desktop/Lander_ws/src/lander/kaanh.xml";	//获取当前工程所在的路径

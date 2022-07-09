@@ -1,6 +1,6 @@
 /**
  * @author Jose Davis Nidhin
- * ²åÖµ²Ù×÷È¥¶¯Ì¬ÄÚ´æ·ÖÅäauthor£ºÐìºÆ
+ * ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½Ì¬ï¿½Ú´ï¿½ï¿½ï¿½ï¿½authorï¿½ï¿½ï¿½ï¿½ï¿½
  * date: 2022.01.26
  * @desc A simple cubic spline interpolation class
  */
@@ -19,7 +19,7 @@ void CubicSpline::Initialize(double * srcX, double * srcY, const int size)
     m_Y = srcY;
 	m_size = size;
 
-    m_B.resize(size-1);
+    m_B.resize(size - 1);
     m_C.resize(size);
     m_D.resize(size - 1);
 

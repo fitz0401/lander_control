@@ -11,7 +11,6 @@
 #include "Param.h"
 #include <ros/ros.h>
 #include "std_msgs/String.h"
-#include "lander/mv_msgs.h"
 
 using namespace aris::dynamic;
 using namespace aris::plan;

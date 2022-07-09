@@ -12,7 +12,6 @@
 #include "Param.h"
 #include <ros/ros.h>
 #include "std_msgs/String.h"
-#include "lander/mv_msgs.h"
 
 using namespace aris::dynamic;
 using namespace aris::plan;
@@ -200,17 +199,19 @@ namespace ControlPlan
 
         double init_pos[4][3];      
         //記錄四條腿末端在程序開始執行時的位置，並在執行結束後進行更新
-        double begin_pos[3];        //從init_pos中取出目標腿末端的初始位置
+        double begin_pos[4][3];        //從init_pos中取出目標腿末端的初始位置
         int legIndex;
-        double x, y, z;
-        double distance;
+        Size begin_motor, end_motor;
+        aris::core::Matrix end_mat;
+        double distance[4];
 
-        myGetPosIK myPos;
+        myGetPosIK myPos[4];
         int selectIndex[3] = {1,1,2};
-        double d1_ori, theta2_ori, theta3_ori;
-        double d1, theta2, theta3;
+        double d1_ori[4] = {0.0}, theta2_ori[4] = {0.0}, theta3_ori[4] = {0.0};
+        double d1[4] = {0.0}, theta2[4] = {0.0}, theta3[4] = {0.0};
 
-        Size totaltime;
+        Size totaltime[4];
+        Size max_time;
     };
     auto PlanFoot::prepareNrt()->void
     {      
@@ -219,25 +220,38 @@ namespace ControlPlan
         param.active_motor.resize(controller()->motorPool().size(), false);
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
         param.step_pjs.resize(controller()->motorPool().size(), 0.0);
+        param.max_time = 0;
 
-        param.legIndex = 0;
-        param.d1 = 0.0;     param.theta2 = 0.0;     param.theta3 = 0.0;
-        param.d1_ori = 0.0; param.theta2_ori = 0.0; param.theta3_ori = 0.0;
-        param.x = 0.0;      param.y = 0.0;          param.z = 0.0;
-        
         ros::param::get("leg_index", param.legIndex);
-        ros::param::get("x_motion", param.x);
-        ros::param::get("y_motion", param.y);
-        ros::param::get("z_motion", param.z);
-        //解析输入参数
-        if (param.legIndex == 12){
+        mout() << "legIndex: " << param.legIndex << endl;
+        // 所有腿都運動
+        if (param.legIndex == 12) {
+            param.begin_motor = 0;
+            param.end_motor = 12;
             std::fill(param.active_motor.begin(), param.active_motor.end(), true);
         }
-        else {
+        // 單腿運動
+        else{
+            param.begin_motor = param.legIndex * 3;
+            param.end_motor = param.legIndex * 3 + 3;
             param.active_motor.at(3 * param.legIndex) = true;
             param.active_motor.at(3 * param.legIndex + 1) = true;
             param.active_motor.at(3 * param.legIndex + 2) = true;
         }
+
+        //解析输入参数
+        for (auto &p : cmdParams())	{
+            if (p.first == "end_mat") {
+                param.end_mat = matrixParam(p.first);
+            }
+        }
+        // 四条腿的位移
+        for (int i = 0; i < 4; i++){
+            param.distance[i] = sqrt(pow(param.end_mat(i, 0), 2) 
+            + pow(param.end_mat(i, 1), 2) + pow(param.end_mat(i, 2), 2));
+            mout() << "distance" << i << "(mm): " << 1000 * param.distance[i] << endl;
+        }
+
         // 從文件中讀取電機初始位置
         ifstream inFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
         if (!inFile.is_open()) {
@@ -248,17 +262,12 @@ namespace ControlPlan
             for (int j = 0; j < 3; j++) {
                 inFile >> param.init_pos[i][j];
                 mout() << param.init_pos[i][j] << " ";
+                param.begin_pos[i][j] = param.init_pos[i][j];
             }
             mout() << endl;
         }
         inFile.close();
-
-        param.begin_pos[0] = param.init_pos[param.legIndex % 4][0];
-        param.begin_pos[1] = param.init_pos[param.legIndex % 4][1];
-        param.begin_pos[2] = param.init_pos[param.legIndex % 4][2];
-        param.distance = sqrt(pow(param.x, 2) + pow(param.y, 2) + pow(param.z, 2));
-        mout() << "distance(mm): " << 1000 * param.distance << endl;
-        mout() << "legIndex: " << param.legIndex << endl;
+    
         this->param() = param;
         std::vector<std::pair<std::string, std::any>> ret_value;
         ret() = ret_value;
@@ -266,75 +275,71 @@ namespace ControlPlan
     auto PlanFoot::executeRT()->int
     {
         auto &param = std::any_cast<PlanFootParam&>(this->param());
-        // 所有腿都運動
-        Size begin_num, end_num;
-        if (param.legIndex == 12) {
-            begin_num = 0;
-            end_num = 12;
-        }
-        // 單腿運動
-        else{
-            begin_num = param.legIndex * 3;
-            end_num = param.legIndex * 3 + 3;
-        }
-        double next_pos, next_vel, next_acc;
+        double next_pos[4], next_vel[4], next_acc[4];
         //第一个周期设置log文件名称，获取当前电机所在位置
         if (count() == 1){
-            ecMaster()->logFileRawName("20220224_test02");
-            for (Size i = begin_num; i < end_num; ++i) {
+            // 初始化電機初始位置［電機坐標系中位置，控制信號用］
+            for (Size i = param.begin_motor; i < param.end_motor; ++i) {
                 if (param.active_motor[i]) {
                     param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
                     mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
-                    param.myPos.fromS1GetMotorAngle(param.begin_pos, param.selectIndex, param.d1_ori, param.theta2_ori, param.theta3_ori);
                 }
             }
-            moveAbsolute(count(), 0, param.distance, 0.00001, 0.000001, 0.000001, next_pos, next_vel, next_acc, param.totaltime);
-            mout() << "totaltime(ms): " << param.totaltime << endl;
+            // 初始化電機初始位置［運動學反解坐標系中位置］
+            for (int i = 0; i < 4; i++) {
+                param.myPos[i].fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
+                moveAbsolute(count(), 0, param.distance[i], 0.00001, 0.000001, 0.000001, next_pos[i], next_vel[i], next_acc[i], param.totaltime[i]);
+                if(param.totaltime[i] > param.max_time)    param.max_time = param.totaltime[i];
+            }         
+            mout() << "max_time(ms): " << param.max_time << endl;
         }
-
-        moveAbsolute(count(), 0, param.distance, 0.00001, 0.000001, 0.000001, next_pos, next_vel, next_acc, param.totaltime);
-        double end_point[3] = {param.begin_pos[0] + next_pos / param.distance * param.x,
-                               param.begin_pos[1] + next_pos / param.distance * param.y,
-                               param.begin_pos[2] + next_pos / param.distance * param.z};
-        param.myPos.fromS1GetMotorAngle(end_point, param.selectIndex, param.d1, param.theta2, param.theta3);
-        for(Size i = begin_num; i < end_num; ++i) {
+        
+        // 运动学反解结果
+        double end_point[4][3] = {0.0};
+        if(param.legIndex == 12) {
+            for (int i = 0; i < 4; i++) {
+                moveAbsolute(count(), 0, param.distance[i], 0.00001, 0.000001, 0.000001, next_pos[i], next_vel[i], next_acc[i], param.totaltime[i]);
+                for(int j = 0; j < 3; j++) {
+                    end_point[i][j] = param.begin_pos[i][j] + next_pos[i] / param.distance[i] * param.end_mat(i, j);
+                }
+                param.myPos[i].fromS1GetMotorAngle(end_point[i], param.selectIndex, param.d1[i], param.theta2[i], param.theta3[i]);
+            }
+        }
+        else {
+            moveAbsolute(count(), 0, param.distance[param.legIndex], 0.00001, 0.000001, 0.000001, next_pos[param.legIndex], next_vel[param.legIndex], next_acc[param.legIndex], param.totaltime[param.legIndex]);
+            for(int j = 0; j < 3; j++) {
+                end_point[param.legIndex][j] = param.begin_pos[param.legIndex][j] + next_pos[param.legIndex] / param.distance[param.legIndex] * param.end_mat(param.legIndex, j);
+            }
+            param.myPos[param.legIndex].fromS1GetMotorAngle(end_point[param.legIndex], param.selectIndex, param.d1[param.legIndex], param.theta2[param.legIndex], param.theta3[param.legIndex]);
+        }
+        
+        // 电机执行程序
+        for(Size i = param.begin_motor; i < param.end_motor; ++i) {
             if(!param.active_motor[i]) return 0;
         }
-
-        for(Size i = begin_num; i < end_num; i += 3) {
-            // 主電機
-            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1 - param.d1_ori);
-            controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
-            // 左輔電機
-            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2 - param.theta2_ori);
-            controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
-            // 右輔電機
-            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori - param.theta3);
-            controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
+        for(Size i = param.begin_motor; i < param.end_motor; i += 3) {
+            // 由于四条腿执行时长不一致，需要判断当前电机是否运动完毕
+            if(count() <= param.totaltime[i / 3]) {
+                // 主電機; i / 3爲腿的序號; i = 0,3,6,9
+                param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
+                controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
+                // 左輔電機
+                param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
+                controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
+                // 右輔電機
+                param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
+                controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
+            }   
         }
-
-        //打印
-        if(count() % 1000 == 0){
-            mout() << "next_pos(mm): " << std::setprecision(10) << 1000 * next_pos << endl;
-            mout() << "end_x:" << std::setprecision(5) << end_point[0] << " "
-                   << "end_y:" << std::setprecision(5) << end_point[1] << " "
-                   << "end_z:" << std::setprecision(5) << end_point[2] << " " << endl;
-        }
-      
-        return param.totaltime - count();
+        return param.max_time - count();
     }
     auto PlanFoot::collectNrt()->void {
         auto &param = std::any_cast<PlanFootParam&>(this->param());
         // 更新全局參數
-        if (param.legIndex == 12) {
-            for (int i = 0; i < 4; i++)     param.init_pos[i][0] += param.x;
-            for (int i = 0; i < 4; i++)     param.init_pos[i][1] += param.y;
-            for (int i = 0; i < 4; i++)     param.init_pos[i][2] += param.z;
-        }
-        else {
-            param.init_pos[param.legIndex][0] += param.x;
-            param.init_pos[param.legIndex][1] += param.y;
-            param.init_pos[param.legIndex][2] += param.z;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 3; j++) {
+                param.init_pos[i][j] += param.end_mat(i ,j);
+            }
         }
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
@@ -359,14 +364,12 @@ namespace ControlPlan
         //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
         aris::core::fromXmlString(command(),
             "<Command name=\"planfoot\">"
-            "	<GroupParam>"
-            "	</GroupParam>"
+            "		<Param name=\"end_mat\" abbreviation=\"end\"/>"   
             "</Command>");
     }
 
     struct PlanMotionParam
     {
-        std::vector<bool> active_motor;			//目标电机
         std::vector<double> begin_pjs;			//起始位置
         std::vector<double> step_pjs;			//目标位置
         
@@ -388,16 +391,16 @@ namespace ControlPlan
         aris::core::Matrix trace_mat;
         double legTrace[12][100];
         double deltaT[100];
-
+        double time_scale;
         double interval_time;
         double init_pos[4][3];      //記錄四條腿末端在程序開始執行時的位置，並在執行結束後進行更新
-        double begin_pos[4][3];        //從init_pos中取出目標腿末端的初始位置
+        double begin_pos[4][3];     //從init_pos中取出目標腿末端的初始位置
 
         // 運動學反解參數
         myGetPosIK myPos[4];
         int selectIndex[3] = {1,1,2};
-        double d1_ori[4] = {0.0}, theta2_ori[4] = {0.0}, theta3_ori[4] = {0.0};
-        double d1[4] = {0.0}, theta2[4] = {0.0}, theta3[4] = {0.0};
+        double d1_ori[4], theta2_ori[4], theta3_ori[4];
+        double d1[4], theta2[4], theta3[4];
         // 總執行時間
         double totalT;
         Size totaltime;
@@ -405,8 +408,6 @@ namespace ControlPlan
     auto PlanMotion::prepareNrt()->void
     {
         PlanMotionParam param;
-        param.active_motor.clear();
-        param.active_motor.resize(controller()->motorPool().size(), false);
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
         param.step_pjs.resize(controller()->motorPool().size(), 0.0);
 
@@ -418,13 +419,16 @@ namespace ControlPlan
         }
         ros::param::get("data_num", param.data_num);
         mout() << "data_num: " << param.data_num << endl;
-        std::fill(param.active_motor.begin(), param.active_motor.end(), true);
 
         // 每一步用時0.5s,可在此處修改
         param.interval_time = 0.5;
         param.totaltime = param.interval_time * 1000 * param.data_num;
+        mout() << "totaltime: " << param.totaltime << endl;
         param.totalT = static_cast<double>(param.totaltime);
-        for (int i = 0; i < param.data_num; i++)    param.deltaT[i] = param.interval_time * i;
+        // 初始化数组的同时，对插值变量x进行赋值
+        for (int i = 0; i < 100; i++)    param.deltaT[i] = param.interval_time * i;
+        // 把0-1s映射到0-(interval_time * data_num)s
+        param.time_scale = param.interval_time * param.data_num / param.totalT;    // 當前時間在總時間中的佔比
 
         // 從文件中讀取足端初始位置
         ifstream inFile1("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
@@ -446,8 +450,17 @@ namespace ControlPlan
         // 获得目标轨迹
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < param.data_num; j++) {
-                param.legTrace[i][j] = param.trace_mat(i, j);
+                param.legTrace[i][j] = param.trace_mat(i, j) / 1000.0;
             }
+            // 数组初始化
+            for (int j = param.data_num; j < 100; j++) {
+                param.legTrace[i][j] = 0.0;
+            }
+        }
+
+        // 初始化電機初始位置［運動學反解坐標系中位置］
+        for (int i = 0; i < 4; i++) {
+            param.myPos[i].fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
         }
 
         this->param() = param;
@@ -457,11 +470,8 @@ namespace ControlPlan
     auto PlanMotion::executeRT()->int
     {
         auto &param = std::any_cast<PlanMotionParam&>(this->param());
-        // 所有腿都運動
-        Size begin_num = 0;     Size end_num = 12;
         // 第一个周期设置log文件名称，获取当前电机所在位置; 初始化插值函數
         if (count() == 1){
-            // 插值函数初始化    
             param.cs0.Initialize(param.deltaT, param.legTrace[0], param.data_num);
             param.cs1.Initialize(param.deltaT, param.legTrace[1], param.data_num);
             param.cs2.Initialize(param.deltaT, param.legTrace[2], param.data_num);
@@ -475,41 +485,30 @@ namespace ControlPlan
             param.cs10.Initialize(param.deltaT, param.legTrace[10], param.data_num);
             param.cs11.Initialize(param.deltaT, param.legTrace[11], param.data_num);
             ecMaster()->logFileRawName("20220224_test02");
-             // 初始化電機初始位置［電機坐標系中位置，控制信號用］
-            for (Size i = begin_num; i < end_num; ++i) {
-                if (param.active_motor[i]) {
-                    param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
-                    mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
-                }
-            }
-            // 初始化電機初始位置［運動學反解坐標系中位置］
-            for (int i = 0; i < 4; i++) {
-                param.myPos[i].fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
+            // 初始化電機初始位置［電機坐標系中位置，控制信號用］
+            for (Size i = 0; i < 12; ++i) {
+                param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
+                mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
             }
         }
-        // 把0-1s映射到0-(interval_time * data_num)s, 注意單位爲m
-        double time_scale = param.interval_time * param.data_num / param.totalT;    // 當前時間在總時間中的佔比
-        double end_point[4][3] = {{param.cs0.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs1.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs2.Interpolate(time_scale * count()) / 1000.0},
-                                  {param.cs3.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs4.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs5.Interpolate(time_scale * count()) / 1000.0},
-                                  {param.cs6.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs7.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs8.Interpolate(time_scale * count()) / 1000.0},
-                                  {param.cs9.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs10.Interpolate(time_scale * count()) / 1000.0,
-                                   param.cs11.Interpolate(time_scale * count()) / 1000.0}};
+        double end_point[4][3] = {{param.cs0.Interpolate(param.time_scale * count()),
+                                   param.cs1.Interpolate(param.time_scale * count()),
+                                   param.cs2.Interpolate(param.time_scale * count())},
+                                  {param.cs3.Interpolate(param.time_scale * count()),
+                                   param.cs4.Interpolate(param.time_scale * count()),
+                                   param.cs5.Interpolate(param.time_scale * count())},
+                                  {param.cs6.Interpolate(param.time_scale * count()),
+                                   param.cs7.Interpolate(param.time_scale * count()),
+                                   param.cs8.Interpolate(param.time_scale * count())},
+                                  {param.cs9.Interpolate(param.time_scale * count()),
+                                   param.cs10.Interpolate(param.time_scale * count()),
+                                   param.cs11.Interpolate(param.time_scale * count())}};
         // 運動學反解
         for (int i = 0; i < 4; i++) {
             param.myPos[i].fromS1GetMotorAngle(end_point[i], param.selectIndex, param.d1[i], param.theta2[i], param.theta3[i]);
         }
         // 電機執行反解結果
-        for(Size i = begin_num; i < end_num; ++i) {
-            if(!param.active_motor[i]) return 0;
-        }
-        for(Size i = begin_num; i < end_num; i += 3) {
+        for(Size i = 0; i < 12; i += 3) {
             // 主電機; i / 3爲腿的序號
             param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
             controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
@@ -520,7 +519,8 @@ namespace ControlPlan
             param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
             controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
         }
-        // 打印
+
+        //打印
         if(count() % 5000 == 0){
             mout() << "end_x_leg1:" << std::setprecision(5) << end_point[0][0] << " "
                    << "end_y_leg1:" << std::setprecision(5) << end_point[0][1] << " "
@@ -540,12 +540,12 @@ namespace ControlPlan
             for (int j = 0; j < 3; j++) {
                 param.init_pos[i][j] = end_point[i][j];
             }
-        }   
+        }
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return param.totaltime - count();
     }
     auto PlanMotion::collectNrt()->void {
-        auto &param = std::any_cast<PlanMotionParam&>(this->param());
+        auto &param = std::any_cast<PlanMotionParam&>(this->param());  
         // 将全局参数输出到记录文件中
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
@@ -558,7 +558,7 @@ namespace ControlPlan
             outFile << param.init_pos[i][2] << endl;
         }
         outFile.close();
-        mout() << "Finish motion." << endl;
+        mout() << "Finish plan motion." << endl;
         ros::param::set("isFinishFlag", true); 
     }
     PlanMotion::~PlanMotion() = default;
