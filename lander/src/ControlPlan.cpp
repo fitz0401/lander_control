@@ -163,6 +163,8 @@ namespace ControlPlan
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
+        outFile.setf(ios::fixed);
+        outFile.precision(6);
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 2; j++) {
                 outFile << initPos[i][j] << " ";
@@ -350,6 +352,8 @@ namespace ControlPlan
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
+        outFile.setf(ios::fixed);
+        outFile.precision(6);
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 2; j++) {
                 outFile << param.init_pos[i][j] << " ";
@@ -461,9 +465,6 @@ namespace ControlPlan
         // 初始化電機初始位置［運動學反解坐標系中位置］
         for (Size i = 0; i < 4; i++) {
             param.myPos.fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
-            mout() << "d1_ori[" << i << "]: " << param.d1_ori[i] << endl;
-            mout() << "theta2_ori[" << i << "]: " << param.theta2_ori[i] << endl;
-            mout() << "theta3_ori[" << i << "]: " << param.theta3_ori[i] << endl;
         }
         this->param() = param;
         std::vector<std::pair<std::string, std::any>> ret_value;
@@ -515,16 +516,12 @@ namespace ControlPlan
             // 主電機; i / 3爲腿的序號
             param.target_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
             controller()->motorPool().at(i).setTargetPos(param.target_pjs[i]);
-            mout() << "target_pjs" << i << ": " << param.target_pjs[i] << endl;
             // 左輔電機
             param.target_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
             controller()->motorPool().at(i + 1).setTargetPos(param.target_pjs[i + 1]);
-            mout() << "target_pjs" << i + 1 << ": " << param.target_pjs[i + 1] << endl;
-
             // 右輔電機
             param.target_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
             controller()->motorPool().at(i + 2).setTargetPos(param.target_pjs[i + 2]);
-            mout() << "target_pjs" << i + 2 << ": " << param.target_pjs[i + 2] << endl;
         }
 
         //打印
@@ -558,6 +555,8 @@ namespace ControlPlan
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
         }
+        outFile.setf(ios::fixed);
+        outFile.precision(6);
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 2; j++) {
                 outFile << param.init_pos[i][j] << " ";

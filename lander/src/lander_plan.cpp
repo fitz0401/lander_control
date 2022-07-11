@@ -76,7 +76,12 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             trace_mat(10, i) = req->foot4_trace_y[i];
             trace_mat(11, i) = req->foot4_trace_z[i];
         }
-        cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
+        try {
+            cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString()); 
+        }
+        catch(const char* &e) {
+            cout<<e<<endl;
+        }
     }  
     else if (req->command_index == -1) {
         ROS_INFO("————————正在清除错误信息并重新使能电机————————");
