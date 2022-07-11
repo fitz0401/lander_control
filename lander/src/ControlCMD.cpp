@@ -1112,9 +1112,9 @@ namespace ControlCMD
     {
         std::vector<bool> active_motor;			//目标电机
         std::vector<double> begin_pjs;			//起始位置
-        std::vector<double> step_pjs;			//目标位置
+        std::vector<double> target_pjs;			//目标位置
 
-        static const int data_num = 340;
+        static const int data_num = 40;
         CubicSpline cs0;
         CubicSpline cs1;
         CubicSpline cs2;
@@ -1149,7 +1149,7 @@ namespace ControlCMD
         param.active_motor.clear();
         param.active_motor.resize(controller()->motorPool().size(), false);
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
-        param.step_pjs.resize(controller()->motorPool().size(), 0.0);
+        param.target_pjs.resize(controller()->motorPool().size(), 0.0);
 
         // 每一步用時0.5s,可在此處修改
         param.interval_time = 0.5;
@@ -1282,14 +1282,14 @@ namespace ControlCMD
         }
         for(Size i = begin_num; i < end_num; i += 3) {
             // 主電機; i / 3爲腿的序號
-            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
-            controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
+            param.target_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
+            controller()->motorPool().at(i).setTargetPos(param.target_pjs[i]);
             // 左輔電機
-            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
-            controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
+            param.target_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
+            controller()->motorPool().at(i + 1).setTargetPos(param.target_pjs[i + 1]);
             // 右輔電機
-            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
-            controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
+            param.target_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
+            controller()->motorPool().at(i + 2).setTargetPos(param.target_pjs[i + 2]);
         }
 
         //打印

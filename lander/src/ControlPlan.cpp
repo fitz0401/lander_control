@@ -247,9 +247,11 @@ namespace ControlPlan
         }
         // 四条腿的位移
         for (int i = 0; i < 4; i++){
-            param.distance[i] = sqrt(pow(param.end_mat(i, 0), 2) 
-            + pow(param.end_mat(i, 1), 2) + pow(param.end_mat(i, 2), 2));
-            mout() << "distance" << i << "(mm): " << 1000 * param.distance[i] << endl;
+            if (param.legIndex == 12 || param.legIndex == i) {
+                param.distance[i] = sqrt(pow(param.end_mat(i, 0), 2) 
+                + pow(param.end_mat(i, 1), 2) + pow(param.end_mat(i, 2), 2));
+                mout() << "distance" << i << "(mm): " << 1000 * param.distance[i] << endl;
+            }
         }
 
         // 從文件中讀取電機初始位置
@@ -337,10 +339,13 @@ namespace ControlPlan
         auto &param = std::any_cast<PlanFootParam&>(this->param());
         // 更新全局參數
         for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 3; j++) {
-                param.init_pos[i][j] += param.end_mat(i ,j);
+            if (param.legIndex == 12 || param.legIndex == i) {
+                for (int j = 0; j < 3; j++) {
+                    param.init_pos[i][j] += param.end_mat(i ,j);
+                }
             }
         }
+        // 输出全局参数到文件中
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
@@ -371,7 +376,7 @@ namespace ControlPlan
     struct PlanMotionParam
     {
         std::vector<double> begin_pjs;			//起始位置
-        std::vector<double> step_pjs;			//目标位置
+        std::vector<double> target_pjs;			//目标位置
         
         // 目标运动轨迹
         int data_num;
@@ -397,7 +402,7 @@ namespace ControlPlan
         double begin_pos[4][3];     //從init_pos中取出目標腿末端的初始位置
 
         // 運動學反解參數
-        myGetPosIK myPos[4];
+        myGetPosIK myPos;
         int selectIndex[3] = {1,1,2};
         double d1_ori[4], theta2_ori[4], theta3_ori[4];
         double d1[4], theta2[4], theta3[4];
@@ -409,7 +414,7 @@ namespace ControlPlan
     {
         PlanMotionParam param;
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
-        param.step_pjs.resize(controller()->motorPool().size(), 0.0);
+        param.target_pjs.resize(controller()->motorPool().size(), 0.0);
 
         // 从ros中获取通讯系统传来的指令，通过解析指令参数实现
         for (auto &p : cmdParams())	{
@@ -452,17 +457,14 @@ namespace ControlPlan
             for (int j = 0; j < param.data_num; j++) {
                 param.legTrace[i][j] = param.trace_mat(i, j) / 1000.0;
             }
-            // 数组初始化
-            for (int j = param.data_num; j < 100; j++) {
-                param.legTrace[i][j] = 0.0;
-            }
         }
-
         // 初始化電機初始位置［運動學反解坐標系中位置］
-        for (int i = 0; i < 4; i++) {
-            param.myPos[i].fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
+        for (Size i = 0; i < 4; i++) {
+            param.myPos.fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
+            mout() << "d1_ori[" << i << "]: " << param.d1_ori[i] << endl;
+            mout() << "theta2_ori[" << i << "]: " << param.theta2_ori[i] << endl;
+            mout() << "theta3_ori[" << i << "]: " << param.theta3_ori[i] << endl;
         }
-
         this->param() = param;
         std::vector<std::pair<std::string, std::any>> ret_value;
         ret() = ret_value;
@@ -484,7 +486,7 @@ namespace ControlPlan
             param.cs9.Initialize(param.deltaT, param.legTrace[9], param.data_num);
             param.cs10.Initialize(param.deltaT, param.legTrace[10], param.data_num);
             param.cs11.Initialize(param.deltaT, param.legTrace[11], param.data_num);
-            ecMaster()->logFileRawName("20220224_test02");
+            ecMaster()->logFileRawName("motion_plan_test");
             // 初始化電機初始位置［電機坐標系中位置，控制信號用］
             for (Size i = 0; i < 12; ++i) {
                 param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
@@ -503,21 +505,26 @@ namespace ControlPlan
                                   {param.cs9.Interpolate(param.time_scale * count()),
                                    param.cs10.Interpolate(param.time_scale * count()),
                                    param.cs11.Interpolate(param.time_scale * count())}};
+        
         // 運動學反解
         for (int i = 0; i < 4; i++) {
-            param.myPos[i].fromS1GetMotorAngle(end_point[i], param.selectIndex, param.d1[i], param.theta2[i], param.theta3[i]);
+            param.myPos.fromS1GetMotorAngle(end_point[i], param.selectIndex, param.d1[i], param.theta2[i], param.theta3[i]);
         }
         // 電機執行反解結果
         for(Size i = 0; i < 12; i += 3) {
             // 主電機; i / 3爲腿的序號
-            param.step_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
-            controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
+            param.target_pjs[i] = param.begin_pjs[i] + 1000 * (param.d1[i / 3] - param.d1_ori[i / 3]);
+            controller()->motorPool().at(i).setTargetPos(param.target_pjs[i]);
+            mout() << "target_pjs" << i << ": " << param.target_pjs[i] << endl;
             // 左輔電機
-            param.step_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
-            controller()->motorPool().at(i + 1).setTargetPos(param.step_pjs[i + 1]);
+            param.target_pjs[i + 1] = param.begin_pjs[i + 1] + (param.theta2[i / 3] - param.theta2_ori[i / 3]);
+            controller()->motorPool().at(i + 1).setTargetPos(param.target_pjs[i + 1]);
+            mout() << "target_pjs" << i + 1 << ": " << param.target_pjs[i + 1] << endl;
+
             // 右輔電機
-            param.step_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
-            controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
+            param.target_pjs[i + 2] = param.begin_pjs[i + 2] + (param.theta3_ori[i / 3] - param.theta3[i / 3]);
+            controller()->motorPool().at(i + 2).setTargetPos(param.target_pjs[i + 2]);
+            mout() << "target_pjs" << i + 2 << ": " << param.target_pjs[i + 2] << endl;
         }
 
         //打印

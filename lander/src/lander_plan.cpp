@@ -47,11 +47,13 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             end_mat(3, i) = req->foot4_motion[i] / 1000.0;
         }
         for (int i = 0; i < 4; i++) {
-            cout << "leg" << i << ": ";
-            for (int j = 0; j < 3; j++) {
-                cout << end_mat(i ,j) << " ";
+            if (req->leg_index == 12 || req->leg_index == i) {
+                cout << "leg" << i << ": ";
+                for (int j = 0; j < 3; j++) {
+                    cout << end_mat(i ,j) * 1000.0 << " ";
+                }
+                cout << endl;
             }
-            cout << endl;
         }
         cs.executeCmd("planfoot --end_mat=" + end_mat.toString());
     }
@@ -75,6 +77,12 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             trace_mat(11, i) = req->foot4_trace_z[i];
         }
         cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
+    }  
+    else if (req->command_index == -1) {
+        ROS_INFO("————————正在清除错误信息并重新使能电机————————");
+        cs.executeCmd("cl");
+        cs.executeCmd("en");
+        ros::param::set("isFinishFlag",true);
     }  
     // 等待着陆器将指令运行完毕
     while(!isFinishFlag){
