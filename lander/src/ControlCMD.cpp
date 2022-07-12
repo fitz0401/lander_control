@@ -1154,7 +1154,7 @@ namespace ControlCMD
         // 每一步用時0.5s,可在此處修改
         param.interval_time = 0.5;
         for (int i = 0; i < param.data_num; i++)    param.deltaT[i] = param.interval_time * i;
-        param.totaltime = param.interval_time * 1000 * param.data_num;
+        param.totaltime = param.interval_time * 1000 * (param.data_num - 1);
         param.totalT = static_cast<double>(param.totaltime);
 
         //解析指令参数

@@ -55,7 +55,14 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                 cout << endl;
             }
         }
-        cs.executeCmd("planfoot --end_mat=" + end_mat.toString());
+        auto plan = cs.executeCmd("planfoot --end_mat=" + end_mat.toString());
+        while(!isFinishFlag) {
+            ros::param::get("isFinishFlag",isFinishFlag);
+        }
+        if (plan->retCode() != 0) {
+            cout << "retCode: " << plan->retCode() << endl;
+            cout << "retMsg: " << plan->retMsg()  << endl; 
+        }       
     }
     // 3:执行运动规划执行，每次接收四个足端运动轨迹数组
     else if (req->command_index == 3) {
@@ -76,12 +83,15 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             trace_mat(10, i) = req->foot4_trace_y[i];
             trace_mat(11, i) = req->foot4_trace_z[i];
         }
-        try {
-            cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString()); 
-        }
-        catch(const char* &e) {
-            cout<<e<<endl;
-        }
+        auto plan = cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
+        while(!isFinishFlag) {
+            ros::param::get("isFinishFlag",isFinishFlag);
+        } 
+        // 打印错误信息
+        if (plan->retCode() != 0) {
+            cout << "retCode: " << plan->retCode() << endl;
+            cout << "retMsg: " << plan->retMsg()  << endl; 
+        }    
     }  
     else if (req->command_index == -1) {
         ROS_INFO("————————正在清除错误信息并重新使能电机————————");

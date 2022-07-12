@@ -261,6 +261,8 @@ namespace ControlPlan
         if (!inFile.is_open()) {
             mout() << "Can not open the parameter file." << endl;
         }
+        inFile.setf(ios::fixed);
+        inFile.precision(6);
         mout() << "Start position of four feet:" << endl;
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
@@ -396,11 +398,11 @@ namespace ControlPlan
         CubicSpline cs9;
         CubicSpline cs10;
         CubicSpline cs11;
+
         // 输入轨迹点数上限为100
         aris::core::Matrix trace_mat;
         double legTrace[12][100];
         double deltaT[100];
-        double time_scale;
         double interval_time;
         double init_pos[4][3];      //記錄四條腿末端在程序開始執行時的位置，並在執行結束後進行更新
         double begin_pos[4][3];     //從init_pos中取出目標腿末端的初始位置
@@ -411,7 +413,6 @@ namespace ControlPlan
         double d1_ori[4], theta2_ori[4], theta3_ori[4];
         double d1[4], theta2[4], theta3[4];
         // 總執行時間
-        double totalT;
         Size totaltime;
     };
     auto PlanMotion::prepareNrt()->void
@@ -431,30 +432,11 @@ namespace ControlPlan
 
         // 每一步用時0.5s,可在此處修改
         param.interval_time = 0.5;
-        param.totaltime = param.interval_time * 1000 * param.data_num;
+        param.totaltime = param.interval_time * 1000 * (param.data_num - 1);
         mout() << "totaltime: " << param.totaltime << endl;
-        param.totalT = static_cast<double>(param.totaltime);
-        // 初始化数组的同时，对插值变量x进行赋值
-        for (int i = 0; i < 100; i++)    param.deltaT[i] = param.interval_time * i;
-        // 把0-1s映射到0-(interval_time * data_num)s
-        param.time_scale = param.interval_time * param.data_num / param.totalT;    // 當前時間在總時間中的佔比
-
-        // 從文件中讀取足端初始位置
-        ifstream inFile1("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::in);
-        if (!inFile1.is_open()) {
-            mout() << "Can not open the parameter file." << endl;
-            return;
-        }
-        mout() << "Start position of four feet:" << endl;
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 3; j++) {
-                inFile1 >> param.init_pos[i][j];
-                mout() << param.init_pos[i][j] << " ";
-                param.begin_pos[i][j] = param.init_pos[i][j];
-            }
-            mout() << endl;
-        }
-        inFile1.close();
+        
+        // 对插值变量x进行赋值
+        for (int i = 0; i < param.data_num; i++)    param.deltaT[i] = param.interval_time * 1000.0 * i;
 
         // 获得目标轨迹
         for (int i = 0; i < 12; i++) {
@@ -462,6 +444,16 @@ namespace ControlPlan
                 param.legTrace[i][j] = param.trace_mat(i, j) / 1000.0;
             }
         }
+        // 获得运动学反解的初始位置,取出param.legTrace的第一列付给4*3的矩阵
+        mout() << "Start position of four feet:" << endl;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 3; j++){
+                param.begin_pos[i][j] = param.legTrace[i * 3 + j][0];
+                mout() << param.begin_pos[i][j] << " ";
+            }
+            mout() << endl;
+        }
+
         // 初始化電機初始位置［運動學反解坐標系中位置］
         for (Size i = 0; i < 4; i++) {
             param.myPos.fromS1GetMotorAngle(param.begin_pos[i], param.selectIndex, param.d1_ori[i], param.theta2_ori[i], param.theta3_ori[i]);
@@ -491,21 +483,21 @@ namespace ControlPlan
             // 初始化電機初始位置［電機坐標系中位置，控制信號用］
             for (Size i = 0; i < 12; ++i) {
                 param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
-                mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
+                //mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
             }
         }
-        double end_point[4][3] = {{param.cs0.Interpolate(param.time_scale * count()),
-                                   param.cs1.Interpolate(param.time_scale * count()),
-                                   param.cs2.Interpolate(param.time_scale * count())},
-                                  {param.cs3.Interpolate(param.time_scale * count()),
-                                   param.cs4.Interpolate(param.time_scale * count()),
-                                   param.cs5.Interpolate(param.time_scale * count())},
-                                  {param.cs6.Interpolate(param.time_scale * count()),
-                                   param.cs7.Interpolate(param.time_scale * count()),
-                                   param.cs8.Interpolate(param.time_scale * count())},
-                                  {param.cs9.Interpolate(param.time_scale * count()),
-                                   param.cs10.Interpolate(param.time_scale * count()),
-                                   param.cs11.Interpolate(param.time_scale * count())}};
+        double end_point[4][3] = {{param.cs0.Interpolate(1.0 * count()),
+                                   param.cs1.Interpolate(1.0 * count()),
+                                   param.cs2.Interpolate(1.0 * count())},
+                                  {param.cs3.Interpolate(1.0 * count()),
+                                   param.cs4.Interpolate(1.0 * count()),
+                                   param.cs5.Interpolate(1.0 * count())},
+                                  {param.cs6.Interpolate(1.0 * count()),
+                                   param.cs7.Interpolate(1.0 * count()),
+                                   param.cs8.Interpolate(1.0 * count())},
+                                  {param.cs9.Interpolate(1.0 * count()),
+                                   param.cs10.Interpolate(1.0 * count()),
+                                   param.cs11.Interpolate(1.0 * count())}};
         
         // 運動學反解
         for (int i = 0; i < 4; i++) {
@@ -539,12 +531,7 @@ namespace ControlPlan
                    << "end_y_leg4:" << std::setprecision(5) << end_point[3][1] << " "
                    << "end_z_leg4:" << std::setprecision(5) << end_point[3][2] << " " << endl;
         }
-        // 更新全局參數
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 3; j++) {
-                param.init_pos[i][j] = end_point[i][j];
-            }
-        }
+
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return param.totaltime - count();
     }
@@ -558,10 +545,9 @@ namespace ControlPlan
         outFile.setf(ios::fixed);
         outFile.precision(6);
         for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 2; j++) {
-                outFile << param.init_pos[i][j] << " ";
-            }
-            outFile << param.init_pos[i][2] << endl;
+            outFile << param.legTrace[3 * i][param.data_num - 1] << " ";
+            outFile << param.legTrace[3 * i + 1][param.data_num - 1] << " ";
+            outFile << param.legTrace[3 * i + 2][param.data_num - 1] << endl;
         }
         outFile.close();
         mout() << "Finish plan motion." << endl;
