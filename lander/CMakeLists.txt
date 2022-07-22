@@ -66,7 +66,7 @@ add_message_files(
 # Generate services in the 'srv' folder
 add_service_files(
   FILES
-  mv_msgs.srv
+  gait_feedback_msgs.srv
 )
 
 ## Generate actions in the 'action' folder

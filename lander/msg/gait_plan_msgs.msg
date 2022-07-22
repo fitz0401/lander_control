@@ -1,5 +1,5 @@
 # 客户端请求
-# 0:getpos; 1:init; 2:planfoot; 3:planmotion
+# 0:getpos; 1:init; 2:planfoot; 3:planmotion; -1:reset
 int32 command_index
 # For planfoot
 int32 leg_index

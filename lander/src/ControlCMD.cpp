@@ -53,14 +53,8 @@ namespace ControlCMD
                 param.active_motor.at(int32Param(p.first)) = true;
 			}
             else if (p.first == "pos") {
-                if (p.second == "current_pos") {
-					param.pos = 0;
-				}
-                else {
-					param.pos = doubleParam(p.first);
-                    param.time = std::abs(doubleParam(p.first));
-				}
-
+                param.pos = doubleParam(p.first);
+                param.time = std::abs(doubleParam(p.first));
 			}
             else if (p.first == "timenum") {
                 param.timenum = doubleParam(p.first);
@@ -74,14 +68,16 @@ namespace ControlCMD
     auto MoveS::executeRT()->int
 	{
         if (count() == 1) {
-            controller()->motorPool().at(1).setModeOfOperation(10);
-            controller()->motorPool().at(1).enable();
+            ecMaster()->logFileRawName("mvs_motion_replay");
+            controller()->motorPool().at(2).setModeOfOperation(10);
+            controller()->motorPool().at(2).enable();
         }
         auto &param = std::any_cast<MoveSParam&>(this->param());
 		auto time = static_cast<int32_t>(param.time * 1000);		//运行周期
         auto totaltime = static_cast<int32_t>(param.timenum * time);//运行总时       
-        controller()->motorPool().at(1).setTargetToq(-30);
-
+        controller()->motorPool().at(2).setTargetToq(-25);
+        auto &lout = ecMaster()->lout();
+        lout << std::setprecision(10) << controller()->motorPool()[2].actualToq()<< std::endl;
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return totaltime - count();
 	}
@@ -344,6 +340,11 @@ namespace ControlCMD
                     else if (p.first == "motion_id") {
                         param.active_motor.at(int32Param(p.first)) = true;
                     }
+                    else if (p.first == "leg_id") {
+                        for (Size i = 0; i < 3; ++i){
+                            param.active_motor.at((int32Param(p.first)-1) * 3 + i) = true;
+                        }
+                    }
                 }
             this->param() = param;
             std::vector<std::pair<std::string, std::any>> ret_value;
@@ -405,7 +406,8 @@ namespace ControlCMD
             "	<GroupParam>"
             "		<UniqueParam default=\"all\">"\
             "			<Param name=\"all\" abbreviation=\"a\"/>"\
-            "			<Param name=\"motion_id\" abbreviation=\"m\" default=\"0\"/>"
+            "			<Param name=\"motion_id\" abbreviation=\"m\" default=\"0\"/>"\
+            "			<Param name=\"leg_id\" abbreviation=\"l\" default=\"0\"/>"
             "		</UniqueParam>"
             "	</GroupParam>"
             "</Command>");
@@ -1017,7 +1019,7 @@ namespace ControlCMD
         double next_pos, next_vel, next_acc;
         //第一个周期设置log文件名称，获取当前电机所在位置
         if (count() == 1){
-            ecMaster()->logFileRawName("20220224_test02");
+            ecMaster()->logFileRawName("20220721_test01");
             for (Size i = begin_num; i < end_num; ++i) {
                 if (param.active_motor[i]) {
                     param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
@@ -1050,13 +1052,30 @@ namespace ControlCMD
             controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
         }
 
-        //打印
+        // 打印
         if(count() % 1000 == 0){
             mout() << "next_pos(mm): " << std::setprecision(10) << 1000 * next_pos << endl;
             mout() << "end_x:" << std::setprecision(5) << end_point[0] << " "
                    << "end_y:" << std::setprecision(5) << end_point[1] << " "
                    << "end_z:" << std::setprecision(5) << end_point[2] << " " << endl;
         }
+
+        //记录
+        auto &lout = ecMaster()->lout();
+        for(int i = 3; i < 6;i++){
+            // lout << "motor: " << std::setprecision(2) << i << " ";
+            // lout << "actualToq: " << std::setprecision(10) << controller()->motorPool()[i].actualToq()<<"  "; 
+            // lout << "actualCur: " << std::setprecision(10) << controller()->motorPool()[i].actualCur()<<"  ";
+            // lout << "actualPos: " << std::setprecision(10) << controller()->motorPool()[i].actualPos()<<"  ";
+            // lout << std::endl;
+        }
+        lout << std::setprecision(10) << controller()->motorPool()[3].actualToq()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[4].actualToq()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[5].actualToq()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[3].actualPos()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[4].actualPos()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[5].actualPos()<<"  "; 
+        lout << std::endl;
 
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return param.totaltime - count();

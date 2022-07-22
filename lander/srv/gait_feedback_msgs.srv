@@ -1,11 +1,12 @@
 # 客户端请求
-# 0:getpos; 1:init; 2:planfoot; 3:planmotion
+# 0:getpos; 1:init; 2:planfoot; 3:planmotion; -1:reset
 int32 command_index
 # For planfoot
-int32 leg
-float64 x_motion
-float64 y_motion
-float64 z_motion
+int32 leg_index
+float64[3] foot1_motion
+float64[3] foot2_motion
+float64[3] foot3_motion
+float64[3] foot4_motion
 # For planmotion
 int32 data_num
 float64[] foot1_trace_x
@@ -23,3 +24,7 @@ float64[] foot4_trace_z
 ---
 # 服务器响应发送的数据
 bool isFinish
+float64[3] foot1_position
+float64[3] foot2_position
+float64[3] foot3_position
+float64[3] foot4_position

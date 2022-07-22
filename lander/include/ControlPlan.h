@@ -6,7 +6,7 @@
 
 namespace ControlPlan
 {
-    //其他参数和函数声明
+    // 通讯规划指令，lander_plan项目使用
 	using Size = std::size_t;
 	constexpr double PI = 3.141592653589793;
 
@@ -32,7 +32,6 @@ namespace ControlPlan
         explicit FindHomePlan(const std::string &name = "initplan");
     };
 
-    // 通讯规划指令，lander_plan项目使用
     class PlanFoot :public aris::core::CloneObject<PlanFoot, aris::plan::Plan>
     {
     public:
@@ -42,6 +41,18 @@ namespace ControlPlan
 
         virtual ~PlanFoot();
         explicit PlanFoot(const std::string &name = "planfoot");
+    };
+
+    // 本条指令与PlanFoot相比，多了检测触地+反馈停止时的足端位置信息
+    class PlanFootFeedback :public aris::core::CloneObject<PlanFootFeedback, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~PlanFootFeedback();
+        explicit PlanFootFeedback(const std::string &name = "planfootfeedback");
     };
 
     class PlanMotion :public aris::core::CloneObject<PlanMotion, aris::plan::Plan>
