@@ -161,7 +161,7 @@ bool doReq(lander::gait_feedback_msgs::Request& req, lander::gait_feedback_msgs:
             resp.foot4_position[i] = feet_position[3][i];
         }   
     }
-    // 3:执行运动规划执行，每次接收四个足端运动轨迹数组
+    // 3:执行运动规划执行，每次接收四个足端运动轨迹数组。无反馈，不需要获取函数返回值
     else if (req.command_index == 3) {
         ROS_INFO("————————正在沿规划轨迹运动————————");
         ros::param::set("data_num", req.data_num);
@@ -189,6 +189,44 @@ bool doReq(lander::gait_feedback_msgs::Request& req, lander::gait_feedback_msgs:
             cout << "retCode: " << plan->retCode() << endl;
             cout << "retMsg: " << plan->retMsg()  << endl; 
         }
+    }
+    // 4:执行运动规划执行，每次接收四个足端运动轨迹数组。
+    else if (req.command_index == 4) {
+        ROS_INFO("————————正在沿规划轨迹运动————————");
+        ros::param::set("leg_index", req.leg_index);
+        ros::param::set("data_num", req.data_num);
+        aris::core::Matrix trace_mat(12, req.data_num, 0.0);
+        for (int i = 0; i < req.data_num; i++) {
+            trace_mat(0, i) = req.foot1_trace_x[i];
+            trace_mat(1, i) = req.foot1_trace_y[i];
+            trace_mat(2, i) = req.foot1_trace_z[i];
+            trace_mat(3, i) = req.foot2_trace_x[i];
+            trace_mat(4, i) = req.foot2_trace_y[i];
+            trace_mat(5, i) = req.foot2_trace_z[i];
+            trace_mat(6, i) = req.foot3_trace_x[i];
+            trace_mat(7, i) = req.foot3_trace_y[i];
+            trace_mat(8, i) = req.foot3_trace_z[i];
+            trace_mat(9, i) = req.foot4_trace_x[i];
+            trace_mat(10, i) = req.foot4_trace_y[i];
+            trace_mat(11, i) = req.foot4_trace_z[i];
+        }
+        auto plan = cs.executeCmd("planmotionfeedback --trace_mat=" + trace_mat.toString());
+        while(!isFinishFlag) {
+            ros::param::get("isFinishFlag",isFinishFlag);
+        } 
+        // 打印错误信息
+        if (plan->retCode() != 0) {
+            cout << "retCode: " << plan->retCode() << endl;
+            cout << "retMsg: " << plan->retMsg()  << endl; 
+        }
+        // 获取函数返回值
+        vector<vector<double>> feet_position = any_cast<vector<vector<double>>>(plan->ret());
+        for (int i = 0; i < 3; ++i) {
+            resp.foot1_position[i] = feet_position[0][i];
+            resp.foot2_position[i] = feet_position[1][i];
+            resp.foot3_position[i] = feet_position[2][i];
+            resp.foot4_position[i] = feet_position[3][i];
+        }  
     }
     else if (req.command_index == -1) {
         ROS_INFO("————————正在清除错误信息并重新使能电机————————");

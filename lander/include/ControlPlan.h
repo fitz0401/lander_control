@@ -43,6 +43,17 @@ namespace ControlPlan
         explicit PlanFoot(const std::string &name = "planfoot");
     };
 
+    class PlanMotion :public aris::core::CloneObject<PlanMotion, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~PlanMotion();
+        explicit PlanMotion(const std::string &name = "planmotion");
+    };
+
     // 本条指令与PlanFoot相比，多了检测触地+反馈停止时的足端位置信息
     class PlanFootFeedback :public aris::core::CloneObject<PlanFootFeedback, aris::plan::Plan>
     {
@@ -55,15 +66,16 @@ namespace ControlPlan
         explicit PlanFootFeedback(const std::string &name = "planfootfeedback");
     };
 
-    class PlanMotion :public aris::core::CloneObject<PlanMotion, aris::plan::Plan>
+    // 本条指令与PlanMotion相比，多了检测触地+反馈停止时的足端位置信息
+    class PlanMotionFeedback :public aris::core::CloneObject<PlanMotionFeedback, aris::plan::Plan>
     {
     public:
         auto virtual prepareNrt()->void;
         auto virtual executeRT()->int;
         auto virtual collectNrt()->void;
 
-        virtual ~PlanMotion();
-        explicit PlanMotion(const std::string &name = "planmotion");
+        virtual ~PlanMotionFeedback();
+        explicit PlanMotionFeedback(const std::string &name = "planmotionfeedback");
     };
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;
