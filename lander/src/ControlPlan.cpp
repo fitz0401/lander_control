@@ -4,6 +4,7 @@
 #include <vector>
 #include <bitset>
 #include <fstream>
+#include <numeric>
 #include "CubicSplineNoDynamic.h"
 #include "ControlPlan.h"
 #include "GetPosIK.h"
@@ -215,8 +216,13 @@ namespace ControlPlan
         Size totaltime[4];
         Size max_time;
 
+        // 反馈控制相关参数
         // 函数返回值为一个4*3的四足末端位置数组
         vector<vector<double>> ret_value;
+        // 缓存500ms内的力矩信息，用于滤波
+        double main_toq[500] = {0.0};
+        double sub_toq_left[500] = {0.0};
+        double sub_toq_right[500] = {0.0};
     };
     auto PlanFoot::prepareNrt()->void
     {      
@@ -421,6 +427,10 @@ namespace ControlPlan
         int leg_index;
         // 函数返回值为一个4*3的四足末端位置数组
         vector<vector<double>> ret_value;
+        // 缓存500ms内的力矩信息，用于滤波
+        double main_toq[500] = {0.0};
+        double sub_toq_left[500] = {0.0};
+        double sub_toq_right[500] = {0.0};
     };
     auto PlanMotion::prepareNrt()->void
     {
@@ -699,11 +709,17 @@ namespace ControlPlan
         }
 
         // 触地检测
-        double motor1_toq = controller()->motorPool()[3].actualToq() / 1000.0 * 8.3;
-        if(count() >= 100 && abs(motor1_toq) >= 10.0) {
+        // 以500ms作为时间区间，将该区间内的均值作为当前count的力矩值
+        param.main_toq[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex].actualToq();
+        param.sub_toq_left[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex + 1].actualToq();
+        param.sub_toq_right[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex + 2].actualToq();
+        double main_toq_mean = accumulate(std::begin(param.main_toq),std::end(param.main_toq),0) / 500.0;
+        double sub_toq_left_mean = accumulate(std::begin(param.sub_toq_left),std::end(param.sub_toq_left),0) / 500.0;
+        double sub_toq_right_mean = accumulate(std::begin(param.sub_toq_right),std::end(param.sub_toq_right),0) / 500.0;
+        if(count() >= 1000 && abs(main_toq_mean) >= 0.2) {
             for (Size i = 0; i < 4; ++i) {
                 for (Size j = 0; j < 3; ++j) {
-                    param.ret_value[i][j] = end_point[i][j] * 1000;
+                    param.ret_value[i][j] = end_point[i][j] * 1000.0;
                 }
             }
             ret() = param.ret_value;
@@ -819,7 +835,8 @@ namespace ControlPlan
             param.cs9.Initialize(param.deltaT, param.legTrace[9], param.data_num);
             param.cs10.Initialize(param.deltaT, param.legTrace[10], param.data_num);
             param.cs11.Initialize(param.deltaT, param.legTrace[11], param.data_num);
-            ecMaster()->logFileRawName("motion_plan_test");
+            // 设置记录文件名称
+            ecMaster()->logFileRawName("220831_feedback_toqdata");
             // 初始化電機初始位置［電機坐標系中位置，控制信號用］
             for (Size i = 0; i < 12; ++i) {
                 param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
@@ -873,14 +890,25 @@ namespace ControlPlan
         }
 
         // 触地检测[待修改：触地检测判据]
-        // param.leg_index = 0/1/2/3，只检测运动腿的触地情况
-        double motor1_toq = controller()->motorPool()[param.leg_index * 3].actualToq() / 1000.0 * 8.3;
-        double motor2_toq = controller()->motorPool()[param.leg_index * 3 + 1].actualToq() / 1000.0 * 3.3;
-        double motor3_toq = controller()->motorPool()[param.leg_index * 3 + 2].actualToq() / 1000.0 * 3.3;
-        if(count() >= 100 && abs(motor1_toq) >= 10.0) {
+        // 以500ms作为时间区间，将该区间内的均值作为当前count的力矩值
+        param.main_toq[(count() - 1) % 500] = controller()->motorPool()[3 * param.leg_index].actualToq();
+        param.sub_toq_left[(count() - 1) % 500] = controller()->motorPool()[3 * param.leg_index + 1].actualToq();
+        param.sub_toq_right[(count() - 1) % 500] = controller()->motorPool()[3 * param.leg_index + 2].actualToq();
+        double main_toq_mean = accumulate(std::begin(param.main_toq),std::end(param.main_toq),0) / 500.0;
+        double sub_toq_left_mean = accumulate(std::begin(param.sub_toq_left),std::end(param.sub_toq_left),0) / 500.0;
+        double sub_toq_right_mean = accumulate(std::begin(param.sub_toq_right),std::end(param.sub_toq_right),0) / 500.0;
+        auto &lout = ecMaster()->lout();
+        // 记录运动腿三个电机的力矩信息
+        for(int i = 3 * param.leg_index; i < 3 * param.leg_index + 3; i++){
+            lout << "motor: " << i << " ";
+            lout << "actualToq: " << std::setprecision(10) << controller()->motorPool()[i].actualToq()<<"  "; 
+        }
+        lout << std::endl;
+        // 测试阈值的时候，只记录数据，把if判断这部分注释掉
+        if(count() >= 1000 && abs(main_toq_mean) >= 0.2) {
             for (Size i = 0; i < 4; ++i) {
                 for (Size j = 0; j < 3; ++j) {
-                    param.ret_value[i][j] = end_point[i][j] * 1000;
+                    param.ret_value[i][j] = end_point[i][j] * 1000.0;
                 }
             }
             ret() = param.ret_value;

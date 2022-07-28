@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/kaanh/Visual_Projects/visual_lander/devel/include/**",
+        "/home/kaanh/Visual_Projects/Cv_Bridge/install/include/**",
+        "/home/kaanh/Desktop/Lander_ws/devel/include/**",
+        "/opt/ros/kinetic/include/**",
+        "/home/kaanh/Visual_Projects/visual_lander/src/Azure_Kinect_ROS_Driver/include/**",
+        "/home/kaanh/Desktop/Lander_ws/src/fdilink_ahrs/include/**",
+        "/home/kaanh/Desktop/Lander_ws/src/lander/include/**",
+        "/home/kaanh/Visual_Projects/visual_lander/src/visual_lander/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
