@@ -144,22 +144,14 @@ bool doReq(lander::gait_feedback_msgs::Request& req, lander::gait_feedback_msgs:
                 cout << endl;
             }
         }
-        auto plan = cs.executeCmd("planfootfeedback --end_mat=" + end_mat.toString());
+        auto plan = cs.executeCmd("planfoot --end_mat=" + end_mat.toString());
         while(!isFinishFlag) {
             ros::param::get("isFinishFlag",isFinishFlag);
         }
         if (plan->retCode() != 0) {
             cout << "retCode: " << plan->retCode() << endl;
             cout << "retMsg: " << plan->retMsg()  << endl; 
-        }
-        // 获取函数返回值
-        vector<vector<double>> feet_position = any_cast<vector<vector<double>>>(plan->ret());
-        for (int i = 0; i < 3; ++i) {
-            resp.foot1_position[i] = feet_position[0][i];
-            resp.foot2_position[i] = feet_position[1][i];
-            resp.foot3_position[i] = feet_position[2][i];
-            resp.foot4_position[i] = feet_position[3][i];
-        }   
+        } 
     }
     // 3:执行运动规划执行，每次接收四个足端运动轨迹数组。无反馈，不需要获取函数返回值
     else if (req.command_index == 3) {
@@ -265,9 +257,9 @@ int main(int argc, char *argv[])
     ros::NodeHandle nh;
 
     // 实例化"订阅者"对象：用于自由步态无反馈控制
-    //ros::Subscriber sub = nh.subscribe<lander::gait_plan_msgs>("GaitPlan",2,doMsg);
+    ros::Subscriber sub = nh.subscribe<lander::gait_plan_msgs>("GaitPlan",2,doMsg);
     // 创建 "服务" 对象：用于触地检测后的反馈控制
-    ros::ServiceServer server = nh.advertiseService("GaitPlanFeedback",doReq);
+    // ros::ServiceServer server = nh.advertiseService("GaitPlanFeedback",doReq);
 
     ROS_INFO("服务已经启动....");
     // 5.回调函数处理请求并产生响应
