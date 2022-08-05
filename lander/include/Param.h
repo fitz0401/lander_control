@@ -5,14 +5,14 @@
 #include <math.h>
 
 namespace Param {
-	// Ö´ÐÐ»ú¹¹
+	// Ö´ï¿½Ð»ï¿½ï¿½ï¿½
     const double a1 = 251.0 / 1000;
     const double b1 = 202.9166 / 1000;
     const double a2 = 35.3553 / 2 / 1000;
     const double b2 = 38.3391 / 1000;
     const double a3 = 127.0 / 1000;
     const double b3 = 60.8790 / 1000;
-    const double l1 = 213.6473 / 1000;
+    const double l1 = (213.6473+100.0) / 1000;
     const double l2 = 406.3691 / 1000;
     const double l3 = 406.3691 / 1000;
     const double l4 = 448.7958 / 1000;
@@ -29,7 +29,7 @@ namespace Param {
     const double p3y = 27.7771 / 1000;
     const double p3z = 26.0140 / 1000;
 
-	// ¸¨´«¶¯
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     const double q1 = 82.4761 / 1000;
     const double q2 = 141.0035 / 1000;
     const double q3x = 61.0 / 1000;
@@ -38,20 +38,20 @@ namespace Param {
     const double q4y = 103.8522 / 1000;
     const double q4z = 9.0 / 1000;
 
-	// Ö÷´«¶¯
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     const double theta_t0 = (167.2238 * M_PI) / 180;
     const double theta_d = (43.3231 * M_PI) / 180;
     const double d2 = 229.5545 / 1000;
     const double d3 = 172.1663 / 1000;
     const double theta_origin1 = M_PI / 2 - M_PI / 6;
 
-	// ·¶Î§ÏÞ¶¨
+	// ï¿½ï¿½Î§ï¿½Þ¶ï¿½
     const double alpha1_min = -3 * M_PI / 3;     const double alpha1_max = 0;
     const double alpha2_min = -3 * M_PI / 3;     const double alpha2_max = 0;
     const double alpha3_min = -3 * M_PI / 3;     const double alpha3_max = 0;
     const double phi1_min = -M_PI / 2;           const double phi1_max = M_PI / 2;
     const double phi2_min = -M_PI / 2;           const double phi2_max = M_PI / 2;
-    const double phi3_min = M_PI / 2;            const double phi3_max = -M_PI / 2; // ×¢Òâ´ËÏîÌØÊâ£¬È¡Âß¼­»ò
+    const double phi3_min = M_PI / 2;            const double phi3_max = -M_PI / 2; // ×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â£¬È¡ï¿½ß¼ï¿½ï¿½ï¿½
     const double beta1_min = -M_PI / 3;          const double beta1_max = M_PI / 3;
     const double beta2_min = -M_PI / 3;          const double beta2_max = M_PI / 3;
     const double beta3_min = -M_PI / 3;          const double beta3_max = M_PI / 3;
@@ -61,7 +61,7 @@ namespace Param {
     const double ksim = M_PI / 3;
 
 
-	// ÆäËû²ÎÊý
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     //const double h = d;
     const double Rms = d + b1 * sin(theta_in);
     //const double Rsp = d + b3 * sin(theta_in) + (l1 + l4) * sin(theta_ex);
@@ -105,7 +105,7 @@ namespace Param {
 
     //const double q1 = 82.4761 / 1000;
     //const double q2 = 141.0035 / 1000;
-    //const double q3x = 61.0 / 1000; //µÈÊ½ÓÒ±ßÃ»ÓÐ¸¡µãÊýÊ±»áÇ¿ÖÆ×ª»»Îªint
+    //const double q3x = 61.0 / 1000; //ï¿½ï¿½Ê½ï¿½Ò±ï¿½Ã»ï¿½Ð¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Ç¿ï¿½ï¿½×ªï¿½ï¿½Îªint
     //const double q3z = 24.0 / 1000;
     //const double q4x = 18.5 / 1000;
     //const double q4y = 103.8522 / 1000;

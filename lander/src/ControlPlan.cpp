@@ -156,10 +156,12 @@ namespace ControlPlan
         }
     auto FindHomePlan::collectNrt()->void {
         // 重置足端初始位置,文件寫入
-        double initPos[4][3] = {{0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639}};
+        // 0.441840698, 0.0, -0.445142639  短腿版本
+        // 0.5368450, 0.0, -0.5980247 最长腿
+        double initPos[4][3] = {{0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521}};
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
