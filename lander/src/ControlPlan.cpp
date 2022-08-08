@@ -585,6 +585,146 @@ namespace ControlPlan
             "</Command>");
     }
 
+    struct PlanAdjustParam
+    {
+        std::vector<double> begin_pjs;			//起始位置
+        std::vector<double> target_pjs;			//目标位置
+        
+        // 目标运动轨迹
+        int data_num;
+        CubicSpline cs0;
+        CubicSpline cs1;
+        CubicSpline cs2;
+        CubicSpline cs3;
+        CubicSpline cs4;
+        CubicSpline cs5;
+        CubicSpline cs6;
+        CubicSpline cs7;
+        CubicSpline cs8;
+        CubicSpline cs9;
+        CubicSpline cs10;
+        CubicSpline cs11;
+
+        // 输入轨迹点数上限为100
+        aris::core::Matrix trace_mat;
+        double motorTrace[12][100];
+        double deltaT[100];
+        double interval_time;
+
+        // 總執行時間
+        Size totaltime;
+    };
+    auto PlanAdjust::prepareNrt()->void
+    {
+        PlanAdjustParam param;
+        param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
+        param.target_pjs.resize(controller()->motorPool().size(), 0.0);
+
+        // 从ros中获取通讯系统传来的指令，通过解析指令参数实现
+        for (auto &p : cmdParams())	{
+            if (p.first == "trace_mat") {
+                param.trace_mat = matrixParam(p.first);
+            }
+        }
+        ros::param::get("data_num", param.data_num);
+        mout() << "data_num: " << param.data_num << endl;
+
+        // 每一步用時0.5s,可在此處修改
+        param.interval_time = 0.5;
+        param.totaltime = param.interval_time * 1000 * (param.data_num - 1);
+        mout() << "totaltime: " << param.totaltime << endl;
+        
+        // 对插值变量x进行赋值
+        for (int i = 0; i < param.data_num; i++)    param.deltaT[i] = param.interval_time * 1000.0 * i;
+
+        // 获得目标轨迹
+        for (int i = 0; i < 12; i++) {
+            for (int j = 0; j < param.data_num; j++) {
+                param.motorTrace[i][j] = param.trace_mat(i, j) / 1000.0;
+            }
+        }
+        this->param() = param;
+        std::vector<std::pair<std::string, std::any>> ret_value;
+        ret() = ret_value;
+    }
+    auto PlanAdjust::executeRT()->int
+    {
+        auto &param = std::any_cast<PlanAdjustParam&>(this->param());
+        // 第一个周期设置log文件名称，获取当前电机所在位置; 初始化插值函數
+        if (count() == 1){
+            param.cs0.Initialize(param.deltaT, param.motorTrace[0], param.data_num);
+            param.cs1.Initialize(param.deltaT, param.motorTrace[1], param.data_num);
+            param.cs2.Initialize(param.deltaT, param.motorTrace[2], param.data_num);
+            param.cs3.Initialize(param.deltaT, param.motorTrace[3], param.data_num);
+            param.cs4.Initialize(param.deltaT, param.motorTrace[4], param.data_num);
+            param.cs5.Initialize(param.deltaT, param.motorTrace[5], param.data_num);
+            param.cs6.Initialize(param.deltaT, param.motorTrace[6], param.data_num);
+            param.cs7.Initialize(param.deltaT, param.motorTrace[7], param.data_num);
+            param.cs8.Initialize(param.deltaT, param.motorTrace[8], param.data_num);
+            param.cs9.Initialize(param.deltaT, param.motorTrace[9], param.data_num);
+            param.cs10.Initialize(param.deltaT, param.motorTrace[10], param.data_num);
+            param.cs11.Initialize(param.deltaT, param.motorTrace[11], param.data_num);
+            ecMaster()->logFileRawName("motion_plan_test");
+            // 初始化電機初始位置［電機坐標系中位置，控制信號用］
+            for (Size i = 0; i < 12; ++i) {
+                param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
+                //mout() << "begin_pjs" << i << ":" << param.begin_pjs[i] << endl;
+            }
+        }
+        double end_point[12] = {param.cs0.Interpolate(1.0 * count()),
+                                param.cs1.Interpolate(1.0 * count()),
+                                param.cs2.Interpolate(1.0 * count()),
+                                param.cs3.Interpolate(1.0 * count()),
+                                param.cs4.Interpolate(1.0 * count()),
+                                param.cs5.Interpolate(1.0 * count()),
+                                param.cs6.Interpolate(1.0 * count()),
+                                param.cs7.Interpolate(1.0 * count()),
+                                param.cs8.Interpolate(1.0 * count()),
+                                param.cs9.Interpolate(1.0 * count()),
+                                param.cs10.Interpolate(1.0 * count()),
+                                param.cs11.Interpolate(1.0 * count())};
+        // 電機執行反解結果
+        for(int i = 0; i <= 9; i += 3) {
+            // 左輔電機
+            param.target_pjs[i + 1] = param.begin_pjs[i + 1] + (end_point[i + 1] - param.motorTrace[i + 1][0]);
+            controller()->motorPool().at(i + 1).setTargetPos(param.target_pjs[i + 1]);
+            // 右輔電機
+            param.target_pjs[i + 2] = param.begin_pjs[i + 2] + (end_point[i + 2] - param.motorTrace[i + 2][0]);
+            controller()->motorPool().at(i + 2).setTargetPos(param.target_pjs[i + 2]);
+        }
+        
+        //打印
+        if(count() % 5000 == 0){
+            mout() << "end_motor1:" << std::setprecision(5) << end_point[1] << " "
+                   << "end_motor2:" << std::setprecision(5) << end_point[2] << " " << endl;
+            mout() << "end_motor4:" << std::setprecision(5) << end_point[4] << " "
+                   << "end_motor5:" << std::setprecision(5) << end_point[5] << " " << endl;
+            mout() << "end_motor7:" << std::setprecision(5) << end_point[7] << " "
+                   << "end_motor8:" << std::setprecision(5) << end_point[8] << " " << endl;
+            mout() << "end_motor10:" << std::setprecision(5) << end_point[10] << " "
+                   << "end_motor11:" << std::setprecision(5) << end_point[11] << " " << endl;
+        }
+
+        //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
+        return param.totaltime - count();
+    }
+    auto PlanAdjust::collectNrt()->void {
+        mout() << "Finish plan adjust." << endl;
+        ros::param::set("isFinishFlag", true); 
+    }
+    PlanAdjust::~PlanAdjust() = default;
+    PlanAdjust::PlanAdjust(const std::string &name)
+    {
+        //构造函数参数说明，构造函数通过xml的格式定义本条指令的接口，name表示参数名，default表示输入参数，abbreviation表示参数名的缩写(缩写只能单个字符)
+        //1 GroupParam下面的各个节点都是输入参数，如果没有给定会使用默认值
+        //2 UniqueParam下面的各个节点互斥，有且只能使用其中的一个
+        //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
+        aris::core::fromXmlString(command(),
+            "<Command name=\"planadjust\">"
+            "		<Param name=\"trace_mat\" abbreviation=\"mat\"/>"
+            "</Command>");
+    }
+
     // 反馈控制命令实现
     auto PlanFootFeedback::prepareNrt()->void
     {      
@@ -952,7 +1092,6 @@ namespace ControlPlan
             "</Command>");
     }
 
-
 	ARIS_REGISTRATION
 	{
         aris::core::class_<GetPosPlan>("GetPosPlan")
@@ -968,6 +1107,10 @@ namespace ControlPlan
         ;
 
         aris::core::class_<PlanMotion>("PlanMotion")
+        .inherit<Plan>()
+        ;
+
+        aris::core::class_<PlanAdjust>("PlanAdjust")
         .inherit<Plan>()
         ;
 
@@ -994,6 +1137,7 @@ namespace ControlPlan
         plan_root->planPool().add<ControlPlan::FindHomePlan>();
         plan_root->planPool().add<ControlPlan::PlanFoot>();
         plan_root->planPool().add<ControlPlan::PlanMotion>();
+        plan_root->planPool().add<ControlPlan::PlanAdjust>();
         plan_root->planPool().add<ControlPlan::PlanFootFeedback>();
         plan_root->planPool().add<ControlPlan::PlanMotionFeedback>();
 		return plan_root;

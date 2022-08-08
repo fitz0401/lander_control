@@ -54,6 +54,17 @@ namespace ControlPlan
         explicit PlanMotion(const std::string &name = "planmotion");
     };
 
+    class PlanAdjust :public aris::core::CloneObject<PlanAdjust, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~PlanAdjust();
+        explicit PlanAdjust(const std::string &name = "planadjust");
+    };
+
     // 本条指令与PlanFoot相比，多了检测触地+反馈停止时的足端位置信息
     class PlanFootFeedback :public aris::core::CloneObject<PlanFootFeedback, aris::plan::Plan>
     {

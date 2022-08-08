@@ -65,7 +65,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             cout << "retMsg: " << plan->retMsg()  << endl; 
         }       
     }
-    // 3:执行运动规划执行，每次接收四个足端运动轨迹数组
+    // 3:执行planmotion，每次接收四个足端运动轨迹数组
     else if (req->command_index == 3) {
         ROS_INFO("————————正在沿规划轨迹运动————————");
         ros::param::set("data_num", req->data_num);
@@ -94,6 +94,36 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             cout << "retMsg: " << plan->retMsg()  << endl; 
         }    
     }  
+    // 5:执行planadjust，每次接收12个电机运动轨迹数组
+    else if (req->command_index == 5) {
+        ROS_INFO("————————正在沿规划轨迹调姿————————");
+        ros::param::set("data_num", req->data_num);
+        aris::core::Matrix trace_mat(12, req->data_num, 0.0);
+        // trace_x赋0或者不赋值，trace_y为左辅电机轨迹，trace_z为右辅电机轨迹
+        for (int i = 0; i < req->data_num; i++) {
+            trace_mat(0, i) = req->foot1_trace_x[i];
+            trace_mat(1, i) = req->foot1_trace_y[i];
+            trace_mat(2, i) = req->foot1_trace_z[i];
+            trace_mat(3, i) = req->foot2_trace_x[i];
+            trace_mat(4, i) = req->foot2_trace_y[i];
+            trace_mat(5, i) = req->foot2_trace_z[i];
+            trace_mat(6, i) = req->foot3_trace_x[i];
+            trace_mat(7, i) = req->foot3_trace_y[i];
+            trace_mat(8, i) = req->foot3_trace_z[i];
+            trace_mat(9, i) = req->foot4_trace_x[i];
+            trace_mat(10, i) = req->foot4_trace_y[i];
+            trace_mat(11, i) = req->foot4_trace_z[i];
+        }
+        auto plan = cs.executeCmd("planadjust --trace_mat=" + trace_mat.toString());
+        while(!isFinishFlag) {
+            ros::param::get("isFinishFlag",isFinishFlag);
+        } 
+        // 打印错误信息
+        if (plan->retCode() != 0) {
+            cout << "retCode: " << plan->retCode() << endl;
+            cout << "retMsg: " << plan->retMsg()  << endl; 
+        }    
+    } 
     else if (req->command_index == -1) {
         ROS_INFO("————————正在清除错误信息并重新使能电机————————");
         cs.executeCmd("cl");

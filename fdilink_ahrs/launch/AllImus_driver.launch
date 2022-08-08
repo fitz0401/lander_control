@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find fdilink_ahrs)/launch/TorsoImu_driver.launch"/>
+  <include file="$(find fdilink_ahrs)/launch/LegImu0_driver.launch"/>
+  <include file="$(find fdilink_ahrs)/launch/LegImu1_driver.launch"/>
+  <include file="$(find fdilink_ahrs)/launch/LegImu2_driver.launch"/>
+  <include file="$(find fdilink_ahrs)/launch/LegImu3_driver.launch"/>
+</launch> 
