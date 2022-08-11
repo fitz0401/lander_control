@@ -18,12 +18,16 @@ using namespace aris::dynamic;
 using namespace aris::plan;
 
 namespace ControlPlan
-{
-    //指令的执行顺序
-    //1、先执行prepareNrt，每条指令只执行一次
-    //2、然后执行executeRT,executeRT每一个循环周期(默认1ms)会被实时核调用一次，执行的总时间由用户给定
-    //3、执行结束后，本指令会被析构
-    //指令功能：某一电机或者所有电机1-cos(theta)轨迹运行，幅值为pos，周期为time，周期数为timenum
+{  
+    // 存储状态数据
+    struct StateParam
+    {
+        double position[12];
+        double velocity[12];
+        double effort[12];
+    };
+    // 传输状态数据的管道，在.h文件中声明，在当前文件中被首先定义
+    aris::core::Pipe pipe_global_stateMsg;
 
     //get current pos
     struct GetPosPlanParam
@@ -348,6 +352,25 @@ namespace ControlPlan
                 controller()->motorPool().at(i + 2).setTargetPos(param.step_pjs[i + 2]);
             }   
         }
+        
+        // 向主进程发送状态信息
+        StateParam state_param;
+        for(Size i = 0; i < 12; ++i) {
+            // 主电机位置信息为丝杠当前位置，单位：mm
+            if(i % 3 == 0) {
+                state_param.position[i] = controller()->motorPool()[i].actualPos();
+            }
+            // 辅电机位置信息为辅电机角度，单位：°
+            else {
+                state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
+            }
+            state_param.velocity[i] = controller()->motorPool()[i].actualVel();
+            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+        }
+        aris::core::Msg state_msg;
+        state_msg.copyStruct(state_param);
+        pipe_global_stateMsg.sendMsg(state_msg);
+        
         return param.max_time - count();
     }
     auto PlanFoot::collectNrt()->void {

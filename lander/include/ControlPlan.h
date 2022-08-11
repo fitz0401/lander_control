@@ -9,6 +9,8 @@ namespace ControlPlan
     // 通讯规划指令，lander_plan项目使用
 	using Size = std::size_t;
 	constexpr double PI = 3.141592653589793;
+    // 全局管道，用于和主进程之间传递状态信息
+    extern aris::core::Pipe pipe_global_stateMsg;
 
     class GetPosPlan :public aris::core::CloneObject<GetPosPlan, aris::plan::Plan>
     {

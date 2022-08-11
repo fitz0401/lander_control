@@ -138,6 +138,9 @@ add_executable(lander_cmd  src/lander_cmd.cpp src/ControlCMD.cpp include/Control
 add_executable(lander_plan  src/lander_plan.cpp src/ControlPlan.cpp include/ControlPlan.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
 add_executable(lander_RTplan  src/lander_RTplan.cpp src/ControlRTPlan.cpp include/ControlRTPlan.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
 add_executable(mytest src/test.cpp)
+add_executable(Test_joint_pub src/Test_joint_pub.cpp)		
+
+
 # add_executable(mytestserver src/mytestserver.cpp)
 # add_executable(mytestclient src/mytestclient.cpp)
 # add_executable(mytest_srv_client src/mytest_srv_client.cpp)
@@ -194,6 +197,7 @@ target_link_libraries(lander_RTplan ${aris_LIBRARIES} atomic modbus /usr/local/l
 
 
 target_link_libraries(mytest  ${catkin_LIBRARIES})
+target_link_libraries(Test_joint_pub ${catkin_LIBRARIES})
 
 #############
 ## Install ##

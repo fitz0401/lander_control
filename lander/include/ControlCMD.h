@@ -22,6 +22,17 @@ namespace ControlCMD
 		explicit MoveS(const std::string &name = "mvs");
 	};
 
+    class MoveClaw :public aris::core::CloneObject<MoveClaw, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~MoveClaw();
+        explicit MoveClaw(const std::string &name = "mvc");
+    };
+
     class MoveMotor :public aris::core::CloneObject<MoveMotor, aris::plan::Plan>
     {
     public:

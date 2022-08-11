@@ -47,12 +47,9 @@ int main(int argc, char *argv[])
     // pub = nh.advertise<std_msgs::String>("state",2);
     // ros::param::set("state_val", 100);
     // sleep(8);
-    // cs.executeCmd("WaitingPlan");        
+    cs.executeCmd("WaitingPlan");        
     // ros::Subscriber sub = nh.subscribe<std_msgs::String>("control",10,doMsg);
     // ros::spin();//循环读取接收的数据，并调用回调函数处理
-
-    cs.executeCmd("getstate");
-
 
     while (1)
     {}

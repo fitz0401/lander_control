@@ -121,7 +121,7 @@ namespace ControlCMD
             param.step_pjs.resize(controller()->motorPool().size(), 0.0);
             param.pos = 0.0;
             param.time = 0.0;
-            param.timenum = 0.0;
+            param.timenum = 0.5;
 
             //解析指令参数
             for (auto &p : cmdParams())	{
@@ -160,18 +160,19 @@ namespace ControlCMD
 
             //第一个周期设置log文件名称，获取当前电机所在位置
             if (count() == 1){
-                ecMaster()->logFileRawName("mvleg_motion_replay");
-                //for (Size i = 0; i < param.active_motor.size(); ++i) {
-                for (Size i = 0; i < 12; ++i) {
+                ecMaster()->logFileRawName("mvmotor_motion_replay");
+                for (Size i = 0; i < param.active_motor.size(); ++i) {
+                //for (Size i = 0; i < 26; ++i) {
                     if (param.active_motor[i]) {
                         param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
                     }
                 }
+                mout() << "param.active_motor.size():" << param.active_motor.size() << endl;
             }
 
             //1-cos(theta)轨迹运行
-            //for (Size i = 0; i < param.active_motor.size(); ++i) {
-            for (Size i = 0; i < 12; ++i) {
+            for (Size i = 0; i < param.active_motor.size(); ++i) {
+            //for (Size i = 0; i < 26; ++i) {
                 if (param.active_motor[i]) {
                     param.step_pjs[i] = param.begin_pjs[i] + param.pos*(1.0 - std::cos(2.0 * PI*count() / time));
                     controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
@@ -184,15 +185,12 @@ namespace ControlCMD
 
             //打印
             auto &cout = mout();
-            if (count() % 100 == 0){
-                //for (int i = 0; i < param.active_motor.size(); i++){
-                for (int i = 0; i < 11; i++){
+            if (count() % 1000 == 0){
+                for (int i = 0; i < param.active_motor.size(); i++){
+                //for (int i = 0; i < 12; i++){
                     if(param.active_motor[i]){
-                        cout << "motor:" << i << std::setprecision(10) << param.step_pjs[i] << "  ";
-                        cout << "motor:" << i << std::setprecision(10) << controller()->motorPool()[i].actualPos() << "  ";
-                        cout << "motor:" << i << std::setprecision(10) << controller()->motorPool()[i].actualVel() << "  ";
-                        cout << "motor:" << i << std::setprecision(10) << controller()->motorPool()[i].actualCur() << "  ";
-                        cout << "motor:" << i << std::setprecision(10) << controller()->motorPool()[i].actualToq() << "  ";
+                        cout << "motor:" << i << "step_pjs: " << param.step_pjs[i] << "  ";
+                        cout << "actualPos: " << controller()->motorPool()[i].actualPos() << "  ";
                         cout << std::endl;
                     }
                 }
@@ -201,7 +199,7 @@ namespace ControlCMD
 
             //记录
             auto &lout = ecMaster()->lout();
-            for(int i = 0; i < 12;i++){
+            for(int i = 0; i < 12; i++){
                 lout << std::setprecision(2) << i << " "; // "motor: "
                 lout << std::setprecision(10) << controller()->motorPool()[i].targetPos()<<"  "; //"targetpos: "
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualPos()<<"  "; //"actualPos: "
@@ -242,6 +240,96 @@ namespace ControlCMD
                 "</Command>");
         }
 
+    auto MoveClaw::prepareNrt()->void
+        {
+            MoveMotorParam param;
+            param.active_motor.clear();
+            param.active_motor.resize(controller()->motorPool().size(), false);
+            param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
+            param.step_pjs.resize(controller()->motorPool().size(), 0.0);
+            param.pos = 0.0;
+            param.timenum = 0.5;
+
+            //解析指令参数
+            for (auto &p : cmdParams())	{
+                if (p.first == "all") {
+                    param.active_motor.at(15) = true;
+                    param.active_motor.at(25) = true;
+                    //param.active_motor.at(24) = true;
+                    param.active_motor.at(21) = true;
+                    param.active_motor.at(20) = true;
+                    param.active_motor.at(16) = true;
+                    param.active_motor.at(17) = true;
+                    param.active_motor.at(14) = true;
+                }
+                else if (p.first == "motion_id") {
+                    if(int32Param(p.first) == 1)   param.active_motor.at(15) = true;
+                    else if(int32Param(p.first) == 2)   param.active_motor.at(25) = true;
+                    //else if(int32Param(p.first) == 3)   param.active_motor.at(24) = true;
+                    else if(int32Param(p.first) == 4)   param.active_motor.at(21) = true;
+                    else if(int32Param(p.first) == 5)   param.active_motor.at(20) = true;
+                    else if(int32Param(p.first) == 6)   param.active_motor.at(16) = true;
+                    else if(int32Param(p.first) == 7)   param.active_motor.at(17) = true;
+                    else if(int32Param(p.first) == 8)   param.active_motor.at(14) = true;
+                }
+                else if (p.first == "mode") {
+                    if (int32Param(p.first) == 0) {
+                        param.pos = 30.5;
+                    }
+                    else if(int32Param(p.first) == 1) {
+                        param.pos = -30.5;
+                    }
+                }
+            }
+            this->param() = param;
+            std::vector<std::pair<std::string, std::any>> ret_value;
+            ret() = ret_value;
+        }
+    auto MoveClaw::executeRT()->int
+        {
+            auto &param = std::any_cast<MoveMotorParam&>(this->param());
+
+            //第一个周期设置log文件名称，获取当前电机所在位置
+            if (count() == 1){
+                ecMaster()->logFileRawName("mvleg_motion_replay");
+                for (Size i = 12; i < param.active_motor.size(); ++i) {
+                    if (param.active_motor[i]) {
+                        param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
+                    }
+                }
+            }
+
+            //1-cos(theta)轨迹运行
+            for (Size i = 12; i < param.active_motor.size(); ++i) {
+                if (param.active_motor[i]) {
+                    param.step_pjs[i] = param.begin_pjs[i] + param.pos*(1.0 - std::cos(2.0 * PI*count() / 20000.0));
+                    controller()->motorPool().at(i).setTargetPos(param.step_pjs[i]);
+                }
+            }
+
+            //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
+            return 10000 - count();
+        }
+    auto MoveClaw::collectNrt()->void {}
+    MoveClaw::~MoveClaw() = default;
+    MoveClaw::MoveClaw(const std::string &name)
+        {
+            //构造函数参数说明，构造函数通过xml的格式定义本条指令的接口，name表示参数名，default表示输入参数，abbreviation表示参数名的缩写(缩写只能单个字符)
+            //1 GroupParam下面的各个节点都是输入参数，如果没有给定会使用默认值
+            //2 UniqueParam下面的各个节点互斥，有且只能使用其中的一个
+            //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
+            aris::core::fromXmlString(command(),
+                "<Command name=\"mvc\">"
+                "	<GroupParam>"
+                "       <Param name=\"mode\" default=\"0\"/>"
+                "		<UniqueParam default=\"all\">"\
+                "			<Param name=\"all\" abbreviation=\"a\"/>"\
+                "			<Param name=\"motion_id\" abbreviation=\"m\" default=\"12\"/>"\
+                "		</UniqueParam>"
+                "	</GroupParam>"
+                "</Command>");
+        }
+
     //get current pos
     struct GetPosParam
     {
@@ -275,8 +363,8 @@ namespace ControlCMD
         //第一个周期设置log文件名称，获取当前电机所在位置
         if (count() == 1){
             ecMaster()->logFileRawName("motion_replay");
-            //for (Size i = 0; i < param.active_motor.size(); ++i) {
-            for (Size i = 0; i < 12; ++i) {
+            for (Size i = 0; i < param.active_motor.size(); ++i) {
+            //for (Size i = 0; i < 12; ++i) {
                 if (param.active_motor[i]) {
                     param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
                     mout() << "motor " << i << " beginpos: " << std::setprecision(10) << param.begin_pjs[i] << "  "<<std::endl;
@@ -377,10 +465,10 @@ namespace ControlCMD
         }
     auto FindHome::collectNrt()->void {
         // 重置足端初始位置,文件寫入
-        double initPos[4][3] = {{0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639},
-                                {0.441840698, 0.0, -0.445142639}};
+        double initPos[4][3] = {{0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521},
+                                {0.4941750, 0.0, -0.5303521}};
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
@@ -1386,6 +1474,10 @@ namespace ControlCMD
             .inherit<Plan>()
             ;
 
+        aris::core::class_<MoveClaw>("MoveClaw")
+            .inherit<Plan>()
+            ;
+
         aris::core::class_<MoveLeg>("MoveLeg")
             .inherit<Plan>()
             ;
@@ -1417,6 +1509,7 @@ namespace ControlCMD
         plan_root->planPool().add<ControlCMD::GetPos>();
         plan_root->planPool().add<ControlCMD::FindHome>();
         plan_root->planPool().add<ControlCMD::MoveMotor>();
+        plan_root->planPool().add<ControlCMD::MoveClaw>();
         plan_root->planPool().add<ControlCMD::MoveLeg>();
         plan_root->planPool().add<ControlCMD::MoveRobot>();
         plan_root->planPool().add<ControlCMD::MoveLine>();
