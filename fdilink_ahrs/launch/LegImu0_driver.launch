@@ -11,6 +11,7 @@
 
     <!-- 波特率 -->
     <param name="baud"  value="921600"/>
+    <!-- <param name="baud"  value="115200"/> -->
 
     <!-- 发布的imu话题名 -->
     <!-- <param name="imu_topic"  value="/mobile_base/sensors/imu_data"/> -->
