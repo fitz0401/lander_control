@@ -116,7 +116,22 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             trace_mat(11, i) = req->foot4_trace_z[i];
         }
         auto plan = cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
+        
+        // 接收实时状态信息
+        StateParam state_param;
+        aris::core::MsgFix<1024> state_msg_recv;
         while(!isFinishFlag) {
+            if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
+                state_msg_recv.pasteStruct(state_param);
+                joint_state_msg.header.stamp = ros::Time::now();
+                for(size_t i = 0; i < 12; ++i) {
+                    joint_state_msg.name[i] = names[i];
+                    joint_state_msg.position[i] = state_param.position[i];
+                    joint_state_msg.velocity[i] = state_param.velocity[i];
+                    joint_state_msg.effort[i] = state_param.effort[i];
+                }
+                pub.publish(joint_state_msg);
+            }
             ros::param::get("isFinishFlag",isFinishFlag);
         } 
         // 打印错误信息
@@ -146,7 +161,22 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             trace_mat(11, i) = req->foot4_trace_z[i];
         }
         auto plan = cs.executeCmd("planadjust --trace_mat=" + trace_mat.toString());
+        
+        // 接收实时状态信息
+        StateParam state_param;
+        aris::core::MsgFix<1024> state_msg_recv;
         while(!isFinishFlag) {
+            if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
+                state_msg_recv.pasteStruct(state_param);
+                joint_state_msg.header.stamp = ros::Time::now();
+                for(size_t i = 0; i < 12; ++i) {
+                    joint_state_msg.name[i] = names[i];
+                    joint_state_msg.position[i] = state_param.position[i];
+                    joint_state_msg.velocity[i] = state_param.velocity[i];
+                    joint_state_msg.effort[i] = state_param.effort[i];
+                }
+                pub.publish(joint_state_msg);
+            }
             ros::param::get("isFinishFlag",isFinishFlag);
         } 
         // 打印错误信息
@@ -155,6 +185,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
             cout << "retMsg: " << plan->retMsg()  << endl; 
         }    
     } 
+    // -1:执行cl，清除错误信息并初始化
     else if (req->command_index == -1) {
         ROS_INFO("————————正在清除错误信息并重新使能电机————————");
         cs.executeCmd("cl");

@@ -574,6 +574,24 @@ namespace ControlPlan
                    << "end_z_leg4:" << std::setprecision(5) << end_point[3][2] << " " << endl;
         }
 
+        // 向主进程发送状态信息
+        StateParam state_param;
+        for(Size i = 0; i < 12; ++i) {
+            // 主电机位置信息为丝杠当前位置，单位：mm
+            if(i % 3 == 0) {
+                state_param.position[i] = controller()->motorPool()[i].actualPos();
+            }
+            // 辅电机位置信息为辅电机角度，单位：°
+            else {
+                state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
+            }
+            state_param.velocity[i] = controller()->motorPool()[i].actualVel();
+            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+        }
+        aris::core::Msg state_msg;
+        state_msg.copyStruct(state_param);
+        pipe_global_stateMsg.sendMsg(state_msg);
+        
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return param.totaltime - count();
     }
@@ -663,7 +681,7 @@ namespace ControlPlan
         // 获得目标轨迹
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < param.data_num; j++) {
-                param.motorTrace[i][j] = param.trace_mat(i, j) / 1000.0;
+                param.motorTrace[i][j] = param.trace_mat(i, j);
             }
         }
         this->param() = param;
@@ -687,7 +705,7 @@ namespace ControlPlan
             param.cs9.Initialize(param.deltaT, param.motorTrace[9], param.data_num);
             param.cs10.Initialize(param.deltaT, param.motorTrace[10], param.data_num);
             param.cs11.Initialize(param.deltaT, param.motorTrace[11], param.data_num);
-            ecMaster()->logFileRawName("motion_plan_test");
+            ecMaster()->logFileRawName("adjust_plan_test");
             // 初始化電機初始位置［電機坐標系中位置，控制信號用］
             for (Size i = 0; i < 12; ++i) {
                 param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
@@ -707,7 +725,10 @@ namespace ControlPlan
                                 param.cs10.Interpolate(1.0 * count()),
                                 param.cs11.Interpolate(1.0 * count())};
         // 電機執行反解結果
-        for(int i = 0; i <= 9; i += 3) {
+        for(int i = 3; i < 6; i += 3) {
+            // 主电机
+            param.target_pjs[i] = param.begin_pjs[i] + (end_point[i] - param.motorTrace[i][0]);
+            controller()->motorPool().at(i).setTargetPos(param.target_pjs[i]);
             // 左輔電機
             param.target_pjs[i + 1] = param.begin_pjs[i + 1] + (end_point[i + 1] - param.motorTrace[i + 1][0]);
             controller()->motorPool().at(i + 1).setTargetPos(param.target_pjs[i + 1]);
@@ -728,6 +749,24 @@ namespace ControlPlan
                    << "end_motor11:" << std::setprecision(5) << end_point[11] << " " << endl;
         }
 
+        // 向主进程发送状态信息
+        StateParam state_param;
+        for(Size i = 0; i < 12; ++i) {
+            // 主电机位置信息为丝杠当前位置，单位：mm
+            if(i % 3 == 0) {
+                state_param.position[i] = controller()->motorPool()[i].actualPos();
+            }
+            // 辅电机位置信息为辅电机角度，单位：°
+            else {
+                state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
+            }
+            state_param.velocity[i] = controller()->motorPool()[i].actualVel();
+            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+        }
+        aris::core::Msg state_msg;
+        state_msg.copyStruct(state_param);
+        pipe_global_stateMsg.sendMsg(state_msg);
+        
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行
         return param.totaltime - count();
     }

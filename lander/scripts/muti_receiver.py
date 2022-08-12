@@ -3,9 +3,9 @@
 import rospy
 import message_filters
 from std_msgs.msg import String, Float32MultiArray
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, JointState
 
-def multi_callback(subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcriber_LegImu3,subcriber_TorsoImu, subcriber_Chatter):
+def multi_callback(subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcriber_LegImu3,subcriber_TorsoImu, subcriber_LanderJoint):
     # print(str(rospy.get_time())+"   同步完成！")
     StateData = [subcriber_LegImu0.orientation.x,
                  subcriber_LegImu0.orientation.y,
@@ -60,7 +60,47 @@ def multi_callback(subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcr
                  subcriber_TorsoImu.angular_velocity.z,
                  subcriber_TorsoImu.linear_acceleration.x,
                  subcriber_TorsoImu.linear_acceleration.y,
-                 subcriber_TorsoImu.linear_acceleration.z]
+                 subcriber_TorsoImu.linear_acceleration.z,
+                 
+                 subcriber_LanderJoint.position[0],
+                 subcriber_LanderJoint.position[1],
+                 subcriber_LanderJoint.position[2],
+                 subcriber_LanderJoint.position[3],
+                 subcriber_LanderJoint.position[4],
+                 subcriber_LanderJoint.position[5],
+                 subcriber_LanderJoint.position[6],
+                 subcriber_LanderJoint.position[7],
+                 subcriber_LanderJoint.position[8],
+                 subcriber_LanderJoint.position[9],
+                 subcriber_LanderJoint.position[10],
+                 subcriber_LanderJoint.position[11],
+
+                 subcriber_LanderJoint.velocity[0],
+                 subcriber_LanderJoint.velocity[1],
+                 subcriber_LanderJoint.velocity[2],
+                 subcriber_LanderJoint.velocity[3],
+                 subcriber_LanderJoint.velocity[4],
+                 subcriber_LanderJoint.velocity[5],
+                 subcriber_LanderJoint.velocity[6],
+                 subcriber_LanderJoint.velocity[7],
+                 subcriber_LanderJoint.velocity[8],
+                 subcriber_LanderJoint.velocity[9],
+                 subcriber_LanderJoint.velocity[10],
+                 subcriber_LanderJoint.velocity[11],
+
+                 subcriber_LanderJoint.effort[0],
+                 subcriber_LanderJoint.effort[1],
+                 subcriber_LanderJoint.effort[2],
+                 subcriber_LanderJoint.effort[3],
+                 subcriber_LanderJoint.effort[4],
+                 subcriber_LanderJoint.effort[5],
+                 subcriber_LanderJoint.effort[6],
+                 subcriber_LanderJoint.effort[7],
+                 subcriber_LanderJoint.effort[8],
+                 subcriber_LanderJoint.effort[9],
+                 subcriber_LanderJoint.effort[10],
+                 subcriber_LanderJoint.effort[11] 
+                 ]
 
     StateDate_Pub = Float32MultiArray(data=StateData)
     publisher_StateDate.publish(StateDate_Pub)
@@ -81,13 +121,14 @@ if __name__ == '__main__':
     subcriber_LegImu2 = message_filters.Subscriber('/LegImu2/imu_data', Imu, queue_size=1)
     subcriber_LegImu3 = message_filters.Subscriber('/LegImu3/imu_data', Imu, queue_size=1)
     subcriber_TorsoImu = message_filters.Subscriber('/TorsoImu/imu_data', Imu, queue_size=1)
-    subcriber_Chatter = message_filters.Subscriber('/chatter', String, queue_size=1)  # 模拟Lander的数据
+    subcriber_LanderJoint = message_filters.Subscriber('/JointState', JointState, queue_size=1)
+    # subcriber_Chatter = message_filters.Subscriber('/chatter', String, queue_size=1)  # 模拟Lander的数据
 
     publisher_StateDate = rospy.Publisher("/StateData",Float32MultiArray,queue_size=10)  # 发布打包好的状态数据
     
     sync = message_filters.ApproximateTimeSynchronizer(
-        [subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcriber_LegImu3, subcriber_TorsoImu, subcriber_Chatter],
-        10,0.01,allow_headerless=True)
+        [subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcriber_LegImu3, subcriber_TorsoImu, subcriber_LanderJoint],
+        10,0.02,allow_headerless=False)
 
     sync.registerCallback(multi_callback)
 
