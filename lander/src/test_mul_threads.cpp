@@ -1,23 +1,21 @@
 #include <iostream>
 #include <thread>
 #include <stdlib.h> //Sleep
+#include <ros/ros.h>
+#include "std_msgs/String.h"
 
 #include <unistd.h>
 // #include <windows.h>
 
 using namespace std;
+ros::Publisher pub;
+ros::Subscriber sub;
 
-void t1() //普通的函数，用来执行线程
-{
+void doMsg(const std_msgs::String::ConstPtr& msg_p){
     cout << "t33331" << endl;
-    // for (int i = 0; i < 10; ++i)
-    while (true)
-    {
-        cout << "t1111" << endl;
-        usleep(500 * 1000);
-    }
 }
-void t2()
+
+void StatePub_thread()
 {
     while (1)
     {
@@ -25,14 +23,20 @@ void t2()
         usleep(1000 * 1000);
     }
 }
-int main()
+int main(int argc, char *argv[])
 {
 
-    thread th1(t1); //实例化一个线程对象th1，使用函数t1构造，然后该线程就开始执行了（t1()）
-    thread th2(t2);
+    ros::init(argc,argv,"Lander");
+    ros::NodeHandle nh;
+    pub = nh.advertise<std_msgs::String>("state",2);  // 定义状态发布方
+    sub = nh.subscribe<std_msgs::String>("control",10,doMsg);  // 定义控制量订阅方
 
-    th1.join(); // 必须将线程join或者detach 等待子线程结束主进程才可以退出
-    th2.join();
+    // thread th1(t1); //实例化一个线程对象th1，使用函数t1构造，然后该线程就开始执行了（t1()）
+    thread mythread(StatePub_thread);
+
+    // 必须ros::spin()在mythread.join()之前：才能保证主线程中的sub和分线程中的程序同时运行  
+    ros::spin();//循环读取接收的数据，并调用回调函数处理
+    mythread.join();// 必须将线程join或者detach 等待子线程结束主进程才可以退出
 
     // or use detach
     // th1.detach();
