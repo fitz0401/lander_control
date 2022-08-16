@@ -139,6 +139,7 @@ add_executable(lander_plan  src/lander_plan.cpp src/ControlPlan.cpp include/Cont
 add_executable(lander_RTplan  src/lander_RTplan.cpp src/ControlRTPlan.cpp include/ControlRTPlan.h include/general.hpp include/CubicSplineNoDynamic.cpp include/CubicSplineNoDynamic.h include/GetPosIK.cpp include/GetPosIK.h include/Param.h include/TransMechPositionIK.h include/TransMechPositionIK.cpp include/WalkLegExeLegIk.cpp include/WalkLegExeLegIk.h)
 add_executable(mytest src/test.cpp)
 add_executable(Test_joint_pub src/Test_joint_pub.cpp)		
+add_executable(test_mul_threads src/test_mul_threads.cpp)		
 
 
 # add_executable(mytestserver src/mytestserver.cpp)
@@ -198,7 +199,7 @@ target_link_libraries(lander_RTplan ${aris_LIBRARIES} atomic modbus /usr/local/l
 
 target_link_libraries(mytest  ${catkin_LIBRARIES})
 target_link_libraries(Test_joint_pub ${catkin_LIBRARIES})
-
+target_link_libraries(test_mul_threads ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

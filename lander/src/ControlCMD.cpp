@@ -199,19 +199,16 @@ namespace ControlCMD
 
             //记录
             auto &lout = ecMaster()->lout();
-            for(int i = 0; i < 12; i++){
-                lout << std::setprecision(2) << i << " "; // "motor: "
-                lout << std::setprecision(10) << controller()->motorPool()[i].targetPos()<<"  "; //"targetpos: "
+            for(int i = 7; i < 8; i++){
+                //lout << std::setprecision(2) << i << " "; // "motor: "
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualPos()<<"  "; //"actualPos: "
 
-                lout << std::setprecision(10) << controller()->motorPool()[i].targetVel()<<"  "; //"targetVel: "
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualVel()<<"  "; //"actualVel: "
 
-                lout << std::setprecision(10) << controller()->motorPool()[i].targetToq()<<"  "; //"targetToq: "
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualToq()<<"  "; //"actualToq: "
 
-                lout << std::setprecision(10) << controller()->motorPool()[i].actualCur()<<"  "; // "actualCur: "
-                lout << std::endl;
+                lout << std::setprecision(10) << controller()->motorPool()[i].actualCur()<<"  "; //"actualCur: "
+                //lout << std::endl;
             }
             lout << std::endl;
 
