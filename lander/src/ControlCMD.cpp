@@ -250,24 +250,24 @@ namespace ControlCMD
             //解析指令参数
             for (auto &p : cmdParams())	{
                 if (p.first == "all") {
-                    param.active_motor.at(15) = true;
-                    param.active_motor.at(25) = true;
-                    //param.active_motor.at(24) = true;
-                    param.active_motor.at(21) = true;
-                    param.active_motor.at(20) = true;
+                    param.active_motor.at(13) = true;
+                    param.active_motor.at(19) = true;
+                    //param.active_motor.at(18) = true;
                     param.active_motor.at(16) = true;
                     param.active_motor.at(17) = true;
                     param.active_motor.at(14) = true;
+                    param.active_motor.at(15) = true;
+                    param.active_motor.at(12) = true;
                 }
                 else if (p.first == "motion_id") {
-                    if(int32Param(p.first) == 1)   param.active_motor.at(15) = true;
-                    else if(int32Param(p.first) == 2)   param.active_motor.at(25) = true;
-                    //else if(int32Param(p.first) == 3)   param.active_motor.at(24) = true;
-                    else if(int32Param(p.first) == 4)   param.active_motor.at(21) = true;
-                    else if(int32Param(p.first) == 5)   param.active_motor.at(20) = true;
-                    else if(int32Param(p.first) == 6)   param.active_motor.at(16) = true;
-                    else if(int32Param(p.first) == 7)   param.active_motor.at(17) = true;
-                    else if(int32Param(p.first) == 8)   param.active_motor.at(14) = true;
+                    if(int32Param(p.first) == 1)   param.active_motor.at(13) = true;
+                    else if(int32Param(p.first) == 2)   param.active_motor.at(19) = true;
+                    else if(int32Param(p.first) == 3)   param.active_motor.at(18) = true;
+                    else if(int32Param(p.first) == 4)   param.active_motor.at(16) = true;
+                    else if(int32Param(p.first) == 5)   param.active_motor.at(17) = true;
+                    else if(int32Param(p.first) == 6)   param.active_motor.at(14) = true;
+                    else if(int32Param(p.first) == 7)   param.active_motor.at(15) = true;
+                    else if(int32Param(p.first) == 8)   param.active_motor.at(12) = true;
                 }
                 else if (p.first == "mode") {
                     if (int32Param(p.first) == 0) {
