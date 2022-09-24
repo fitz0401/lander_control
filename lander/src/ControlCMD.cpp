@@ -199,16 +199,15 @@ namespace ControlCMD
 
             //记录
             auto &lout = ecMaster()->lout();
-            for(int i = 7; i < 8; i++){
-                //lout << std::setprecision(2) << i << " "; // "motor: "
+            for(int i = 0; i < 1; i++){
+                lout << std::setprecision(10) << controller()->motorPool()[i].targetPos()<<"  "; //"targetPos: "
+
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualPos()<<"  "; //"actualPos: "
 
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualVel()<<"  "; //"actualVel: "
 
-                lout << std::setprecision(10) << controller()->motorPool()[i].actualToq()<<"  "; //"actualToq: "
-
                 lout << std::setprecision(10) << controller()->motorPool()[i].actualCur()<<"  "; //"actualCur: "
-                //lout << std::endl;
+                
             }
             lout << std::endl;
 
@@ -462,10 +461,10 @@ namespace ControlCMD
         }
     auto FindHome::collectNrt()->void {
         // 重置足端初始位置,文件寫入
-        double initPos[4][3] = {{0.4941750, 0.0, -0.5303521},
-                                {0.4941750, 0.0, -0.5303521},
-                                {0.4941750, 0.0, -0.5303521},
-                                {0.4941750, 0.0, -0.5303521}};
+        double initPos[4][3] = {{0.4835074, 0.0, -0.5134339},
+                                {0.4835074, 0.0, -0.5134339},
+                                {0.4835074, 0.0, -0.5134339},
+                                {0.4835074, 0.0, -0.5134339}};
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;

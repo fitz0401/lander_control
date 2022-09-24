@@ -12,13 +12,13 @@ namespace Param {
     const double b2 = 38.3391 / 1000;
     const double a3 = 127.0 / 1000;
     const double b3 = 60.8790 / 1000;
-    const double l1 = (213.6473+100.0) / 1000;
+    const double l1 = (213.6473+80.0) / 1000;
     const double l2 = 406.3691 / 1000;
     const double l3 = 406.3691 / 1000;
     const double l4 = 448.7958 / 1000;
     const double d = 863.0 / 2000;
     //const double h = 451.0;
-    const double theta_in = 17.6909 * M_PI / 180;
+    const double theta_in = M_PI / 6;
     const double theta_ex = M_PI / 6;
     const double theta_p = (40.0 * M_PI) / 180;
     const double p1 = 129.0 / 1000;
