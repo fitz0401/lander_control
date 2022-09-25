@@ -2,16 +2,18 @@
 #define _WALKLEGEXELEGIK_HPP
 
 #include "Param.h"
-#include <math.h>
 
 using namespace std;
 
-class WalkLegExeLegIk                //反解求解
+class WalkLegExeLegIk                //路沤艙芒脟贸艙芒
 {
 public:
     WalkLegExeLegIk();
 
-    void MyS1toLink123Angle(double S1__C[], int* SelectSolutionIndex, double& alpha1, double& alpha2, double& alpha3);    //上层调用返回反解角度函数
+    //脡脧虏茫碌梅脫脙路碌禄脴脭脣露炉脩搂路沤艙芒脣霉脨猫脪陋碌脛艙脟露脠
+    void MyS1toLink123Angle(double S1__C[], int* SelectSolutionIndex, double& alpha1, double& alpha2, double& alpha3);  
+    //脡脧虏茫碌梅脫脙路碌禄脴脩脜驴脡卤脠鸥脴脮贸脟贸艙芒脣霉脨猫脪陋碌脛脣霉脫脨鹿脴艙脷脳陋艙脟
+    void MyS1toAllJointAngles(double S1__C[], int* SelectSolutionIndex, double* alpha, double* beta, double* gamma);
 
     ~WalkLegExeLegIk();
 
@@ -20,21 +22,20 @@ private:
     void IK_Link2_Matrix(double alpha1, double beta1, double gamma1, int SelectSolutionIndex[], double& m_alpha2);
     void IK_Link3_Matrix(double alpha1, double beta1, double gamma1, int SelectSolutionIndex[], double& m_alpha3);
 
-    //运动学反解中用到的量
+    //脭脣露炉脩搂路沤艙芒脰脨脫脙碌艙碌脛脕驴
     double beta1;
     double gamma1;
     double beta2;
     double gamma2;
     double beta3;
     double gamma3;
-    double Link123_AngleMatrix[9] = {0};
-    double Link1Angle[3] = {0};
-    double Link2Angle[3] = {0};
-    double Link3Angle[3] = {0};
-//	friend class myGetPosIK;
+    double Link123_AngleMatrix[9] = { 0 };
+    double Link1Angle[3] = { 0 };
+    double Link2Angle[3] = { 0 };
+    double Link3Angle[3] = { 0 };
 
-    int SelectSolutionIndex[3];  //行走模式在两个二支链上有两个解，所以在数组后两个元素有1，2两种选择，共4种
-    double S1__C[3];   // 位置反解的输入参数：S1在C基下的坐标;
+    int SelectSolutionIndex[3];  //脨脨脳脽脛拢脢艙脭脷脕艙啪枚露镁脰搂脕沤脡脧脫脨脕艙啪枚艙芒拢卢脣霉脪脭脭脷脢媒脳茅潞贸脕艙啪枚脭陋脣脴脫脨1拢卢2脕艙脰脰脩隆脭帽拢卢鹿虏4脰脰
+    double S1__C[3];   // 脦禄脰脙路沤艙芒碌脛脢盲脠毛虏脦脢媒拢潞S1脭脷C禄霉脧脗碌脛脳酶卤锚;
 };
 
 #endif
