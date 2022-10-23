@@ -461,10 +461,10 @@ namespace ControlCMD
         }
     auto FindHome::collectNrt()->void {
         // 重置足端初始位置,文件寫入
-        double initPos[4][3] = {{0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339}};
+        double initPos[4][3] = {{0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381}};
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
@@ -1103,7 +1103,7 @@ namespace ControlCMD
         double next_pos, next_vel, next_acc;
         //第一个周期设置log文件名称，获取当前电机所在位置
         if (count() == 1){
-            ecMaster()->logFileRawName("20220721_test01");
+            ecMaster()->logFileRawName("202211019_down50_345");
             for (Size i = begin_num; i < end_num; ++i) {
                 if (param.active_motor[i]) {
                     param.begin_pjs[i] = controller()->motorPool()[i].targetPos();
@@ -1153,12 +1153,19 @@ namespace ControlCMD
             // lout << "actualPos: " << std::setprecision(10) << controller()->motorPool()[i].actualPos()<<"  ";
             // lout << std::endl;
         }
+        // 足端位置信息
+        lout << std::setprecision(10) << end_point[0]<<"  ";
+        lout << std::setprecision(10) << end_point[1]<<"  ";
+        lout << std::setprecision(10) << end_point[2]<<"  "; 
+        // 电机速度信息
+        lout << std::setprecision(10) << controller()->motorPool()[3].actualVel()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[4].actualVel()<<"  ";
+        lout << std::setprecision(10) << controller()->motorPool()[5].actualVel()<<"  "; 
+        // 电机电流信息
         lout << std::setprecision(10) << controller()->motorPool()[3].actualToq()<<"  ";
         lout << std::setprecision(10) << controller()->motorPool()[4].actualToq()<<"  ";
         lout << std::setprecision(10) << controller()->motorPool()[5].actualToq()<<"  ";
-        lout << std::setprecision(10) << controller()->motorPool()[3].actualPos()<<"  ";
-        lout << std::setprecision(10) << controller()->motorPool()[4].actualPos()<<"  ";
-        lout << std::setprecision(10) << controller()->motorPool()[5].actualPos()<<"  "; 
+        
         lout << std::endl;
 
         //返回0表示正常结束，返回负数表示报错，返回正数表示正在执行

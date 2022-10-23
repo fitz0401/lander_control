@@ -24,21 +24,21 @@ namespace Param {
     const double theta_ex = M_PI / 6;
     const double theta_p = (40.0 * M_PI) / 180;
     const double p1 = 129.0 / 1000;
-    const double p2x = 124.0 / 1000;
-    const double p2y = 27.7771 / 1000;
-    const double p2z = 26.0140 / 1000;
-    const double p3x = 124.0 / 1000;
-    const double p3y = 27.7771 / 1000;
-    const double p3z = 26.0140 / 1000;
+    const double p2x = 123.8 / 1000;
+    const double p2y = 25.5 / 1000;
+    const double p2z = 28.0985 / 1000;
+    const double p3x = 123.8 / 1000;
+    const double p3y = 25.5 / 1000;
+    const double p3z = 28.0985 / 1000;
 
     // žšŽ«¶¯
     const double q1 = 82.0008 / 1000;
     const double q2 = 141.0035 / 1000;
     const double q3x = 61.0 / 1000;
     const double q3z = 24.0 / 1000;
-    const double q4x = 18.5 / 1000;
-    const double q4y = 94.9958 / 1000;
-    const double q4z = 6.9262 / 1000;
+    const double q4x = 19.8 / 1000;
+    const double q4y = 95 / 1000;
+    const double q4z = 9 / 1000;
 
     // Ö÷Ž«¶¯
     const double theta_t0 = (167.2238 * M_PI) / 180;

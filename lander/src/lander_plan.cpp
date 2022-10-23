@@ -24,9 +24,10 @@ const char *names[12] = {"joint0", "joint1", "joint2", "joint3", "joint4", "join
                          "joint6", "joint7", "joint8", "joint9", "joint10", "joint11"};
 struct StateParam
 {
+    int count;
     double position[12];
     double velocity[12];
-    double effort[12];
+    double current[12];
 };
 
 // 声明发布者对象，用于发布状态参数
@@ -83,7 +84,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.name[i] = names[i];
                     joint_state_msg.position[i] = state_param.position[i];
                     joint_state_msg.velocity[i] = state_param.velocity[i];
-                    joint_state_msg.effort[i] = state_param.effort[i];
+                    joint_state_msg.effort[i] = state_param.current[i];
                 }
                 pub.publish(joint_state_msg);
             }
@@ -128,7 +129,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.name[i] = names[i];
                     joint_state_msg.position[i] = state_param.position[i];
                     joint_state_msg.velocity[i] = state_param.velocity[i];
-                    joint_state_msg.effort[i] = state_param.effort[i];
+                    joint_state_msg.effort[i] = state_param.current[i];
                 }
                 pub.publish(joint_state_msg);
             }
@@ -173,7 +174,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.name[i] = names[i];
                     joint_state_msg.position[i] = state_param.position[i];
                     joint_state_msg.velocity[i] = state_param.velocity[i];
-                    joint_state_msg.effort[i] = state_param.effort[i];
+                    joint_state_msg.effort[i] = state_param.current[i];
                 }
                 pub.publish(joint_state_msg);
             }
@@ -192,6 +193,59 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         cs.executeCmd("en");
         ros::param::set("isFinishFlag",true);
     }  
+    
+    // 102:执行planfootfeedback，含触地检测的单腿运动测试
+    else if (req->command_index == 102) {
+        ROS_INFO("————————正在执行末端轨迹运动[含触地检测]————————");
+        ros::param::set("leg_index", req->leg_index);
+        ROS_INFO("足端目标位移为:");
+        aris::core::Matrix end_mat(4, 3, 0.0);
+        for (int i = 0; i < 3; i++) {
+            end_mat(0, i) = req->foot1_motion[i] / 1000.0;
+            end_mat(1, i) = req->foot2_motion[i] / 1000.0;
+            end_mat(2, i) = req->foot3_motion[i] / 1000.0;
+            end_mat(3, i) = req->foot4_motion[i] / 1000.0;
+        }
+        for (int i = 0; i < 4; i++) {
+            if (req->leg_index == 12 || req->leg_index == i) {
+                cout << "leg" << i << ": ";
+                for (int j = 0; j < 3; j++) {
+                    cout << end_mat(i ,j) * 1000.0 << " ";
+                }
+                cout << endl;
+            }
+        }
+        auto plan = cs.executeCmd("planfootfeedback --end_mat=" + end_mat.toString());
+        
+        // 接收RT管道信息，并向上位机发送实时状态信息
+        StateParam state_param;
+        aris::core::MsgFix<1024> state_msg_recv;
+        ControlPlan::contact_index = 0;
+        // 机器人运动过程中，程序会阻滞在该while循环内
+        while(!isFinishFlag) {
+            if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
+                state_msg_recv.pasteStruct(state_param);
+                joint_state_msg.header.stamp = ros::Time::now();
+                for(size_t i = 0; i < 12; ++i) {
+                    joint_state_msg.name[i] = names[i];
+                    joint_state_msg.header.seq = state_param.count;
+                    joint_state_msg.position[i] = state_param.position[i];
+                    joint_state_msg.velocity[i] = state_param.velocity[i];
+                    joint_state_msg.effort[i] = state_param.current[i];
+                }
+                pub.publish(joint_state_msg);              
+            }
+            // 利用ros全局参数接收触地检测信息，通过管道发送给RT线程
+            ros::param::get("contactIndex",ControlPlan::contact_index);
+            ros::param::get("isFinishFlag",isFinishFlag);
+        } 
+
+        // 错误信息提示
+        if (plan->retCode() != 0) {
+            cout << "retCode: " << plan->retCode() << endl;
+            cout << "retMsg: " << plan->retMsg()  << endl; 
+        }       
+    }
     // 等待着陆器将指令运行完毕
     while(!isFinishFlag){
         ros::param::get("isFinishFlag",isFinishFlag);

@@ -11,6 +11,7 @@ namespace ControlPlan
 	constexpr double PI = 3.141592653589793;
     // 全局管道，用于和主进程之间传递状态信息
     extern aris::core::Pipe pipe_global_stateMsg;
+    extern int contact_index;
 
     class GetPosPlan :public aris::core::CloneObject<GetPosPlan, aris::plan::Plan>
     {

@@ -19,15 +19,22 @@ using namespace aris::plan;
 
 namespace ControlPlan
 {  
-    // 存储状态数据
+    // 存储待发送的状态数据
     struct StateParam
     {
+        int count;
         double position[12];
         double velocity[12];
-        double effort[12];
+        double current[12];
+    }; 
+    // 储存接收到的决策信息
+    struct PlanParam
+    {
+        int contact_index;
     };
     // 传输状态数据的管道，在.h文件中声明，在当前文件中被首先定义
     aris::core::Pipe pipe_global_stateMsg;
+    int contact_index = 0;
 
     //get current pos
     struct GetPosPlanParam
@@ -162,10 +169,10 @@ namespace ControlPlan
         // 重置足端初始位置,文件寫入
         // 0.441840698, 0.0, -0.445142639  短腿版本
         // 0.5368450, 0.0, -0.5980247 最长腿
-        double initPos[4][3] = {{0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339},
-                                {0.4835074, 0.0, -0.5134339}};
+        double initPos[4][3] = {{0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381},
+                                {0.4846293, 0.0, -0.5127381}};
         ofstream outFile("/home/kaanh/Desktop/Lander_ws/src/RobotParam", ios::trunc);
         if(!outFile.is_open()){
             mout() << "Can not open the parameter file." << endl;
@@ -225,10 +232,8 @@ namespace ControlPlan
         // 反馈控制相关参数
         // 函数返回值为一个4*3的四足末端位置数组
         vector<vector<double>> ret_value;
-        // 缓存500ms内的力矩信息，用于滤波
-        double main_toq[500] = {0.0};
-        double sub_toq_left[500] = {0.0};
-        double sub_toq_right[500] = {0.0};
+        StateParam state_param;
+        PlanParam plan_param;
     };
     auto PlanFoot::prepareNrt()->void
     {      
@@ -365,7 +370,7 @@ namespace ControlPlan
                 state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
             }
             state_param.velocity[i] = controller()->motorPool()[i].actualVel();
-            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+            state_param.current[i] = controller()->motorPool()[i].actualCur();
         }
         aris::core::Msg state_msg;
         state_msg.copyStruct(state_param);
@@ -473,7 +478,7 @@ namespace ControlPlan
         mout() << "data_num: " << param.data_num << endl;
 
         // 每一步用時0.5s,可在此處修改
-        param.interval_time = 0.5;
+        param.interval_time = 0.6;
         param.totaltime = param.interval_time * 1000 * (param.data_num - 1);
         mout() << "totaltime: " << param.totaltime << endl;
         
@@ -586,7 +591,7 @@ namespace ControlPlan
                 state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
             }
             state_param.velocity[i] = controller()->motorPool()[i].actualVel();
-            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+            state_param.current[i] = controller()->motorPool()[i].actualCur();
         }
         aris::core::Msg state_msg;
         state_msg.copyStruct(state_param);
@@ -761,7 +766,7 @@ namespace ControlPlan
                 state_param.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
             }
             state_param.velocity[i] = controller()->motorPool()[i].actualVel();
-            state_param.effort[i] = controller()->motorPool()[i].actualToq();
+            state_param.current[i] = controller()->motorPool()[i].actualCur();
         }
         aris::core::Msg state_msg;
         state_msg.copyStruct(state_param);
@@ -792,6 +797,7 @@ namespace ControlPlan
     {      
         // 仍使用无反馈的数据结构
         PlanFootParam param;
+        
         param.active_motor.clear();
         param.active_motor.resize(controller()->motorPool().size(), false);
         param.begin_pjs.resize(controller()->motorPool().size(), 0.0);
@@ -912,25 +918,31 @@ namespace ControlPlan
             }   
         }
 
-        // 触地检测
-        // 以500ms作为时间区间，将该区间内的均值作为当前count的力矩值
-        param.main_toq[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex].actualToq();
-        param.sub_toq_left[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex + 1].actualToq();
-        param.sub_toq_right[(count() - 1) % 500] = controller()->motorPool()[3 * param.legIndex + 2].actualToq();
-        double main_toq_mean = accumulate(std::begin(param.main_toq),std::end(param.main_toq),0) / 500.0;
-        double sub_toq_left_mean = accumulate(std::begin(param.sub_toq_left),std::end(param.sub_toq_left),0) / 500.0;
-        double sub_toq_right_mean = accumulate(std::begin(param.sub_toq_right),std::end(param.sub_toq_right),0) / 500.0;
-        if(count() >= 1000 && abs(main_toq_mean) >= 0.2) {
-            for (Size i = 0; i < 4; ++i) {
-                for (Size j = 0; j < 3; ++j) {
-                    param.ret_value[i][j] = end_point[i][j] * 1000.0;
-                }
+        // 返回足端位置信息
+        for (Size i = 0; i < 4; ++i) {
+            for (Size j = 0; j < 3; ++j) {
+                param.ret_value[i][j] = end_point[i][j] * 1000.0;
             }
-            ret() = param.ret_value;
+        }
+        ret() = param.ret_value;
+        // 触地检测：向上位机发送一次状态数据
+        if(count() % 5 == 0) {
+            param.state_param.count = count();
+            for (Size i = 0; i < 3; ++i) {
+                param.state_param.position[3*param.legIndex + i] = end_point[param.legIndex][i];
+                param.state_param.velocity[3*param.legIndex + i] = controller()->motorPool()[3 * param.legIndex + i].actualVel();
+                param.state_param.current[3*param.legIndex + i] = controller()->motorPool()[3 * param.legIndex + i].actualCur();
+            }
+            // 发送状态数据
+            aris::core::Msg state_msg;
+            state_msg.copyStruct(param.state_param);
+            pipe_global_stateMsg.sendMsg(state_msg);
+        }
+        // 触地检测：每个count()都检查flag标记
+        if(contact_index != 0) {
             mout() << "————已经接触地面。停止运动，等待下次规划命令————" << endl;
             return 0;
         }
-        ret() = param.ret_value;
         return param.max_time - count();
     }
     auto PlanFootFeedback::collectNrt()->void {
