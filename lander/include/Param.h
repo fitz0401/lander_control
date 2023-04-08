@@ -36,9 +36,9 @@ namespace Param {
     const double q2 = 141.0035 / 1000;
     const double q3x = 61.0 / 1000;
     const double q3z = 24.0 / 1000;
-    const double q4x = 19.8 / 1000;
-    const double q4y = 95 / 1000;
-    const double q4z = 9 / 1000;
+    const double q4x = 18.5 / 1000;
+    const double q4y = 94.9958 / 1000;
+    const double q4z = 6.9262 / 1000;
 
     // Ö÷Ž«¶¯
     const double theta_t0 = (167.2238 * M_PI) / 180;

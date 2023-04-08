@@ -11,9 +11,11 @@
 #include "lander/gait_plan_msgs.h"
 #include "lander/gait_feedback_msgs.h"
 #include <sensor_msgs/JointState.h>
+#include <thread>
 
 using namespace aris::dynamic;
 using namespace std;
+
 auto xmlpath = "/home/kaanh/Desktop/Lander_ws/src/lander/kaanh.xml";	//获取当前工程所在的路径
 const std::string xmlfile = "kaanh.xml";		//控制配置文件名称
 // aris全局控制单例
@@ -22,16 +24,10 @@ auto&cs = aris::server::ControlServer::instance();
 sensor_msgs::JointState joint_state_msg;
 const char *names[12] = {"joint0", "joint1", "joint2", "joint3", "joint4", "joint5",
                          "joint6", "joint7", "joint8", "joint9", "joint10", "joint11"};
-struct StateParam
-{
-    int count;
-    double position[12];
-    double velocity[12];
-    double current[12];
-};
 
 // 声明发布者对象，用于发布状态参数
 ros::Publisher pub;
+ros::Publisher pub_certain;
 
 // 收到控制指令后所要进行的动作[无反馈信息，用于自由步态行走]
 void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
@@ -74,7 +70,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         auto plan = cs.executeCmd("planfoot --end_mat=" + end_mat.toString());
         
         // 接收实时状态信息
-        StateParam state_param;
+        ControlPlan::StateParam state_param;
         aris::core::MsgFix<1024> state_msg_recv;
         while(!isFinishFlag) {
             if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
@@ -86,7 +82,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.velocity[i] = state_param.velocity[i];
                     joint_state_msg.effort[i] = state_param.current[i];
                 }
-                pub.publish(joint_state_msg);
+                pub_certain.publish(joint_state_msg);
             }
             ros::param::get("isFinishFlag",isFinishFlag);
         }
@@ -119,7 +115,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         auto plan = cs.executeCmd("planmotion --trace_mat=" + trace_mat.toString());
         
         // 接收实时状态信息
-        StateParam state_param;
+        ControlPlan::StateParam state_param;
         aris::core::MsgFix<1024> state_msg_recv;
         while(!isFinishFlag) {
             if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
@@ -131,7 +127,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.velocity[i] = state_param.velocity[i];
                     joint_state_msg.effort[i] = state_param.current[i];
                 }
-                pub.publish(joint_state_msg);
+                pub_certain.publish(joint_state_msg);
             }
             ros::param::get("isFinishFlag",isFinishFlag);
         } 
@@ -164,7 +160,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         auto plan = cs.executeCmd("planadjust --trace_mat=" + trace_mat.toString());
         
         // 接收实时状态信息
-        StateParam state_param;
+        ControlPlan::StateParam state_param;
         aris::core::MsgFix<1024> state_msg_recv;
         while(!isFinishFlag) {
             if (ControlPlan::pipe_global_stateMsg.recvMsg(state_msg_recv)) {
@@ -176,7 +172,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.velocity[i] = state_param.velocity[i];
                     joint_state_msg.effort[i] = state_param.current[i];
                 }
-                pub.publish(joint_state_msg);
+                pub_certain.publish(joint_state_msg);
             }
             ros::param::get("isFinishFlag",isFinishFlag);
         } 
@@ -218,7 +214,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         auto plan = cs.executeCmd("planfootfeedback --end_mat=" + end_mat.toString());
         
         // 接收RT管道信息，并向上位机发送实时状态信息
-        StateParam state_param;
+        ControlPlan::StateParam state_param;
         aris::core::MsgFix<1024> state_msg_recv;
         ControlPlan::contact_index = 0;
         // 机器人运动过程中，程序会阻滞在该while循环内
@@ -233,7 +229,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
                     joint_state_msg.velocity[i] = state_param.velocity[i];
                     joint_state_msg.effort[i] = state_param.current[i];
                 }
-                pub.publish(joint_state_msg);              
+                pub_certain.publish(joint_state_msg);              
             }
             // 利用ros全局参数接收触地检测信息，通过管道发送给RT线程
             ros::param::get("contactIndex",ControlPlan::contact_index);
@@ -251,6 +247,7 @@ void doMsg(const lander::gait_plan_msgs::ConstPtr& req) {
         ros::param::get("isFinishFlag",isFinishFlag);
     }
 }
+
 
 // 收到控制指令后所要进行和反馈的动作[有反馈信息，用于触地检测行走]
 bool doReq(lander::gait_feedback_msgs::Request& req, lander::gait_feedback_msgs::Response& resp){
@@ -380,6 +377,33 @@ bool doReq(lander::gait_feedback_msgs::Request& req, lander::gait_feedback_msgs:
     return true;
 }
 
+
+void statePub(){
+    auto opt = aris::plan::Plan::NOT_PRINT_CMD_INFO | aris::plan::Plan::NOT_PRINT_EXECUTE_COUNT;
+    auto plan = cs.executeCmd("sendstate");
+    plan->option() = opt;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));                 
+    while(1){
+        usleep(10000);
+        // 接收实时状态信息
+        joint_state_msg.header.stamp = ros::Time::now();
+        for(size_t i = 0; i < 12; ++i) {
+            joint_state_msg.name[i] = names[i];
+            joint_state_msg.header.seq = ControlPlan::state_pub.count;
+            joint_state_msg.position[i] = ControlPlan::state_pub.position[i];
+            joint_state_msg.velocity[i] = ControlPlan::state_pub.velocity[i];
+            joint_state_msg.effort[i] = ControlPlan::state_pub.current[i];
+        }
+        pub.publish(joint_state_msg);
+    }
+    // 错误信息提示
+    if (plan->retCode() != 0) {
+        cout << "retCode: " << plan->retCode() << endl;
+        cout << "retMsg: " << plan->retMsg()  << endl; 
+    }   
+}
+
+
 int main(int argc, char *argv[])
 {
 	aris::core::fromXmlFile(cs, xmlpath);		//加载kaanh.xml配置
@@ -400,6 +424,7 @@ int main(int argc, char *argv[])
     joint_state_msg.position.resize(12);
     joint_state_msg.velocity.resize(12);
     joint_state_msg.effort.resize(12);
+
     // 开启ros端信号接受程序
     setlocale(LC_ALL,"");
     // 初始化 ROS 节点
@@ -408,7 +433,11 @@ int main(int argc, char *argv[])
     ros::NodeHandle nh;
     // 实例化“发布者”对象，用于发布状态参数
     pub = nh.advertise<sensor_msgs::JointState>("/JointState", 2);
+    pub_certain = nh.advertise<sensor_msgs::JointState>("/JointStateCertain", 2);
 
+    // 开启子线程，发布状态信息
+    thread sub_thread(statePub);
+    
     // 实例化"订阅者"对象：用于自由步态无反馈控制
     ros::Subscriber sub = nh.subscribe<lander::gait_plan_msgs>("GaitPlan",2,doMsg);
 
@@ -419,6 +448,7 @@ int main(int argc, char *argv[])
     // 5.回调函数处理请求并产生响应
     // 6.由于请求有多个，需要调用 ros::spin()
     ros::spin();
+    sub_thread.join();
 
     return 0;
 }

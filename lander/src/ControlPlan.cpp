@@ -19,22 +19,10 @@ using namespace aris::plan;
 
 namespace ControlPlan
 {  
-    // 存储待发送的状态数据
-    struct StateParam
-    {
-        int count;
-        double position[12];
-        double velocity[12];
-        double current[12];
-    }; 
-    // 储存接收到的决策信息
-    struct PlanParam
-    {
-        int contact_index;
-    };
     // 传输状态数据的管道，在.h文件中声明，在当前文件中被首先定义
     aris::core::Pipe pipe_global_stateMsg;
     int contact_index = 0;
+    StateParam state_pub;
 
     //get current pos
     struct GetPosPlanParam
@@ -1166,6 +1154,50 @@ namespace ControlPlan
             "</Command>");
     }
 
+    auto SendState::prepareNrt()->void
+    {      
+        GetPosPlanParam param;
+        this->param() = param;
+        std::vector<std::pair<std::string, std::any>> ret_value;
+        ret() = ret_value;
+    }
+    auto SendState::executeRT()->int
+    {
+        // 修改全局变量信息
+        state_pub.count = count();
+        for(Size i = 0; i < 12; ++i) {
+            // 主电机位置信息为丝杠当前位置，单位：mm
+            if(i % 3 == 0) {
+                state_pub.position[i] = controller()->motorPool()[i].actualPos();
+            }
+            // 辅电机位置信息为辅电机角度，单位：°
+            else {
+                state_pub.position[i] = controller()->motorPool()[i].actualPos() / PI * 180.0;
+            }
+            state_pub.velocity[i] = controller()->motorPool()[i].actualVel();
+            state_pub.current[i] = controller()->motorPool()[i].actualCur();
+        }
+        return 1;
+    }
+    auto SendState::collectNrt()->void {}
+    SendState::~SendState() = default;
+    SendState::SendState(const std::string &name)
+    {
+        //构造函数参数说明，构造函数通过xml的格式定义本条指令的接口，name表示参数名，default表示输入参数，abbreviation表示参数名的缩写(缩写只能单个字符)
+        //1 GroupParam下面的各个节点都是输入参数，如果没有给定会使用默认值
+        //2 UniqueParam下面的各个节点互斥，有且只能使用其中的一个
+        //3 例如，通过terminal或者socket发送“mvs --pos=0.1”，控制器实际会按照mvs --pos=0.1rad --time=1s --timenum=2 --all执行
+        aris::core::fromXmlString(command(),
+            "<Command name=\"sendstate\">"
+            "	<GroupParam>"
+            "		<UniqueParam default=\"all\">"\
+            "			<Param name=\"all\" abbreviation=\"a\"/>"\
+            "			<Param name=\"leg_id\" abbreviation=\"l\" default=\"0\"/>"
+            "		</UniqueParam>"
+            "	</GroupParam>" 
+            "</Command>");
+    }
+
 	ARIS_REGISTRATION
 	{
         aris::core::class_<GetPosPlan>("GetPosPlan")
@@ -1195,6 +1227,10 @@ namespace ControlPlan
         aris::core::class_<PlanMotionFeedback>("PlanMotionFeedback")
         .inherit<Plan>()
         ;
+
+        aris::core::class_<SendState>("SendState")
+        .inherit<Plan>()
+        ;
 	}
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>
@@ -1214,6 +1250,7 @@ namespace ControlPlan
         plan_root->planPool().add<ControlPlan::PlanAdjust>();
         plan_root->planPool().add<ControlPlan::PlanFootFeedback>();
         plan_root->planPool().add<ControlPlan::PlanMotionFeedback>();
+        plan_root->planPool().add<ControlPlan::SendState>();
 		return plan_root;
 	}
 }

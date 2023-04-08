@@ -6,7 +6,7 @@ from std_msgs.msg import String, Float32MultiArray
 from sensor_msgs.msg import Imu, JointState
 
 def multi_callback(subcriber_LegImu0, subcriber_LegImu1,subcriber_LegImu2, subcriber_LegImu3,subcriber_TorsoImu, subcriber_LanderJoint):
-    # print(str(rospy.get_time())+"   同步完成！")
+    print(str(rospy.get_time())+"   同步完成！")
     StateData = [subcriber_LegImu0.orientation.x,
                  subcriber_LegImu0.orientation.y,
                  subcriber_LegImu0.orientation.z,

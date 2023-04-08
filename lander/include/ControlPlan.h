@@ -12,6 +12,20 @@ namespace ControlPlan
     // 全局管道，用于和主进程之间传递状态信息
     extern aris::core::Pipe pipe_global_stateMsg;
     extern int contact_index;
+    // 状态信息
+    struct StateParam
+    {
+        int count;
+        double position[12];
+        double velocity[12];
+        double current[12];
+    };
+    // 决策反馈信息
+    struct PlanParam
+    {
+        int contact_index;
+    };
+    extern StateParam state_pub;
 
     class GetPosPlan :public aris::core::CloneObject<GetPosPlan, aris::plan::Plan>
     {
@@ -90,6 +104,18 @@ namespace ControlPlan
 
         virtual ~PlanMotionFeedback();
         explicit PlanMotionFeedback(const std::string &name = "planmotionfeedback");
+    };
+
+    // 实时发送状态信息
+    class SendState :public aris::core::CloneObject<SendState, aris::plan::Plan>
+    {
+    public:
+        auto virtual prepareNrt()->void;
+        auto virtual executeRT()->int;
+        auto virtual collectNrt()->void;
+
+        virtual ~SendState();
+        explicit SendState(const std::string &name = "sendstate");
     };
 
 	auto createPlanRoot()->std::unique_ptr<aris::plan::PlanRoot>;
