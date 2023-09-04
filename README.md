@@ -1,148 +1,121 @@
-# Lander
+# Lander Control
 
-#### 介绍
-本仓库包含了着陆器工控机上的所有控制代码（不包含上位机MATLAB部分代码）。已开发了两种控制方式：命令行手动控制和上位机规划控制，前者会在工控机端启动一个命令行窗口，在其中键入命令即可；后者借助ROS的话题通讯/服务通信方式，工控机接收上位机的控制信号并执行。
+## Introduction
+This repository contains all the control code for the lander's industrial computer (excluding the MATLAB code for the upper computer). Two control methods have been developed: command-line manual control and upper computer planning control. The former starts a command-line window on the industrial computer, where commands can be entered directly. The latter utilizes ROS topic communication/service communication to allow the industrial computer to receive control signals from the upper computer and execute them.
 
-#### 控制系统架构与函数说明
-【cmd命令行控制方式】
-初始化[init]：
-经测试发现，12个elmo电机中，重新开关机后，4个主电机的编码器读数会改变，而8个辅电机的编码器读数一般不会改变．解决方法：每次重新开机后调用＂getpos＂函数得到电机位置读数，将这些读数与xml配置文件中的主电机＂pos_offset＂参数相加．
-一定要先调用getpos，检查电机位置是否正确，再使用init．
-每次调试结束关机前，都要调用init复位，以便于下次调试开始时检查位置是否正确．
-调用格式：
-init (初始化所有电机)
-init -m=0 (初始化0号电机)
-init -l=1/2/3/4 (初始化单条腿)
+## Control System Architecture and Function Description
+### Command-Line Control Method
+* Initialization [init]:
 
-单电机运动[mvm]：
-用于移动单个电机．
-针对辅电机，单位为deg，移动多少度pos参数设置为多少即可，正值为向箱体外侧转动运动；
-针对主电机，单位为mm，但要乘以比例系数57.3，负值为丝杠向上运动，足端下探．例如想让丝杠向上运动10cm，pos应设置为-5730．
-调用格式：
-mvm --pos=10 -m=1 -t=3 
-mvm --pos=-5730 -m=3  -t=10
+After testing, it was found that the encoder readings of the four main motors would change when the 12 Elmo motors were power cycled, while the encoder readings of the eight auxiliary motors generally remain unchanged. The solution is to call the "getpos" function each time the system is powered on to obtain the motor position readings and add them to the "pos_offset" parameter in the XML configuration file.
+It is necessary to call "getpos" first to check if the motor positions are correct before using "init".
+Before shutting down after each debugging session, "init" must be called to reset the system, so that the positions can be checked correctly at the start of the next session.
 
-单腿仿导入仿真点运动[mvleg]：
-本条指令依赖仿真点的设置，设置不当易造成速度和加速度不连续／电机掉使能的问题，待修改．
-［注意插值函數的使用：初始化操作要在RT中執行，可以放在count=1中］
-调用格式：mvleg
+Call format:
+```
+init (initialize all motors)
+init -m=0 (initialize motor 0)
+init -l=1/2/3/4 (initialize specific leg)
+```
+* Single Motor Movement [mvm]:
+  
+Used to move individual motors.
+For auxiliary motors, the unit is degrees. Set the "pos" parameter to the desired degree of movement. A positive value rotates the motor towards the outer side of the box.
+For main motors, the unit is mm, but multiplied by the scaling factor 57.3. A negative value makes the lead screw move upwards, causing the foot to descend. For example, to move the lead screw upwards by 10 cm, "pos" should be set to -5730.
 
-足端直线运动[mvline]：
-本指令用于移动单条腿，给定足端位移（单位：mm），沿直线运动到目标点．采用梯形轨迹规划，设置运动速度约为1cm/s．每次執行後會記錄新的起始位置，因此可以實現幾條指令連續執行．全部指令執行完後，必須執行init，恢復初始位置．
-也可以一起移動所有腿，參數爲-a，但需要保證四條腿初始位置都一模一樣．一般用於運行步態規劃軌跡前的初始化．
-调用格式：[注意：l=1/2/3/4]
+Call format:
+```
+mvm --pos=10 -m=1 -t=3
+mvm --pos=-5730 -m=3 -t=10
+```
+* Simulated Point-to-Point Movement of a Single Leg [mvleg]:
+
+This command relies on the settings of simulated points. Improper settings may cause discontinuity in speed and acceleration or motor disablement issues. This needs to be modified.
+[Note on the use of interpolation functions: Initialization operations should be performed in RT and can be placed in count=1.]
+
+Call format:
+```
+mvleg
+```
+* Foot Linear Movement [mvline]:
+
+This command is used to move a single leg. It specifies the displacement of the foot (unit: mm) and moves it in a straight line to the target point. Trapezoidal trajectory planning is adopted, with a movement speed of about 1 cm/s. After each execution, a new starting position is recorded, allowing consecutive execution of multiple commands. After executing all commands, "init" must be called to restore the initial position.
+All legs can also be moved together using the parameter "-a", but it is necessary to ensure that the initial positions of the four legs are identical. This is generally used for initializing before running gait trajectory planning.
+
+Call format: [Note: l=1/2/3/4]
+```
 mvline -l=1 -x=30 -z=-50
 mvline (-a) -z=-75
+```
+* Movement along Planned Gait Trajectory [mvplan]:
 
-沿步態規劃的軌跡運動[mvplan]:
-輸入規劃後的軌跡點，利用param.interval_time指定軌跡點間用時．程序會自動進行三次樣條插值，擬合足端在每1ms的軌跡．目前軌跡點暫存於build目錄下的＂PlanTrace＂文件內。该文件内数据点存储方式应当为data_num*12，即行向量为点数，列向量为腿的xyz。
-調用格式：
-mvplan (-a) 所有腿都執行運動
-mvplan -l=1 (讀入所有數據，但只執行1號腿)
+This command takes planned trajectory points and uses the param.interval_time to specify the time between each trajectory point. The program automatically performs cubic spline interpolation to fit the trajectory of the foot at 1ms intervals. The trajectory points are currently stored in the "PlanTrace" file in the build directory. The data in the file should be stored as data_num*12, with the row vector representing the number of points and the column vector representing the x, y, z coordinates of the leg.
 
+Call format:
+```
+mvplan (-a) - perform movement for all legs
+mvplan -l=1 - read in all data, but only execute for leg 1
+```
 
-【上位机控制方式】
-上位机控制指令与cmd控制指令的不同之处在于，所有指令执行前，会在ros全局参数中设置isFinishFlag标志位为false，待指令全部执行完毕后，才会设置isFinishFlag标志位为true。上位机端会循环在ros全局参数中读取isFinishFlag标志位的值，只有检测到true时，才可以发布下一条命令。除此外，指令的底层实现方式是一致的。
-另外，为了实现触地反馈后，重新规划足端运动，上位机端MATLAB设计了两套代码，分别采用话题通信/服务通信的方式和工控机进行交互。话题通信不需要等到着陆器命令执行完毕，可直接进入下一次规划轨迹计算；服务通信需要等待着陆器命令执行完毕/或检测到触地后命令中断，着陆器工控机端返回当前足端位置给MATLAB端，MATLAB利用该数据进行新一次规划。
-与上位机通讯的数据格式：
-			# 客户端请求
-			# 0:getpos; 1:init; 2:planfoot; 3:planmotion
-			int32 command_index
-			# For planfoot
-			int32 leg_index
-			float64[3] foot1_motion
-			float64[3] foot2_motion
-			float64[3] foot3_motion
-			float64[3] foot4_motion
-			# For planmotion
-			int32 data_num
-			float64[] foot1_trace_x
-			float64[] foot1_trace_y
-			float64[] foot1_trace_z
-			float64[] foot2_trace_x
-			float64[] foot2_trace_y
-			float64[] foot2_trace_z
-			float64[] foot3_trace_x
-			float64[] foot3_trace_y
-			float64[] foot3_trace_z
-			float64[] foot4_trace_x
-			float64[] foot4_trace_y
-			float64[] foot4_trace_z 
-			---
-			# 服务器响应发送的数据
-			bool isFinish
-			float64[3] foot1_position
-			float64[3] foot2_position
-			float64[3] foot3_position
-			float64[3] foot4_position
-（此处服务器响应数据，只有反馈控制，采用服务通信方式时才有用）
+### Upper Computer Control Method
+The upper computer control instructions differ from the cmd control instructions in that, before executing any instruction, the isFinishFlag flag in the ROS global parameters is set to false. It is only after all instructions have been executed that the isFinishFlag flag is set to true. The upper computer side continuously reads the value of the isFinishFlag flag in the ROS global parameters and can only publish the next command when it detects true. Apart from this, the underlying implementation of the instructions is the same.
 
-*无反馈信息指令：
-查看编码器初始位置[getposplan][指令0]
-位姿初始化[initplan][指令1]
-单腿、多腿同时运动[planfoot][指令2]：
-	需要同时设置leg_index（0/1/2/3或12，12代表所有腿都运动）和4个含有3各元素的数组，指定四条腿末端相对初始运动的位移dx、dy、dz。
-沿规划轨迹点运动[planmotion][指令3]：
-	需要同时设置data_num(不超过100)和四条腿末端的位移轨迹。
-清除错位并重新使能电机[cl][指令-1]
-————————
-*有反馈信息指令：
-沿规划轨迹点运动[planmotionfeedback][指令3]：返回四条腿足端的位置
+Additionally, in order to re-plan foot motion after receiving ground contact feedback, the upper computer side has designed two sets of MATLAB code, which interact with the industrial computer using either topic communication or service communication. Topic communication does not require waiting for the lander's commands to be executed, and can directly proceed to the next trajectory calculation. Service communication, on the other hand, waits for the lander's commands to be executed or for interruption due to ground contact. In this case, the lander's industrial computer returns the current foot position to MATLAB, which is then used for a new planning process.
 
-#### 着陆器样机试验操作流程
+The data format for communication with the upper computer is as follows:
+```
+# Client Request
+# 0: getpos; 1: init; 2: planfoot; 3: planmotion
+int32 command_index
+# For planfoot
+int32 leg_index
+float64[3] foot1_motion
+float64[3] foot2_motion
+float64[3] foot3_motion
+float64[3] foot4_motion
+# For planmotion
+int32 data_num
+float64[] foot1_trace_x
+float64[] foot1_trace_y
+float64[] foot1_trace_z
+float64[] foot2_trace_x
+float64[] foot2_trace_y
+float64[] foot2_trace_z
+float64[] foot3_trace_x
+float64[] foot3_trace_y
+float64[] foot3_trace_z
+float64[] foot4_trace_x
+float64[] foot4_trace_y
+float64[] foot4_trace_z
+---
+# Server Response Data
+bool isFinish
+float64[3] foot1_position
+float64[3] foot2_position
+float64[3] foot3_position
+float64[3] foot4_position
+```
+(For server response data, only applicable for feedback control when using service communication)
 
-1.  开机和关机流程
-	开机：24V供电编码器，48V供电电机。按下机身电源键后，等待几秒钟，待编码器和电机上所有灯不再闪动后，顺序按下遥控器A-B-D键。可以在命令行窗口运行“sudo ethercat slave”，查看所有电机是否成功建立ethercat通信。【开机后无论采用什么控制方式，都应先执行getpos和init命令，分别检查编码器位置是否正确，并使着陆器回到初始位姿】
-	关机：【关机前无论采用什么控制方式，务必执行init命令使着陆器回到初始位姿，这样即使下次开机编码器位置发生变化，也非常容易调整】保存必要的文件和数据后，顺序按下遥控器D-B-A键，关闭机身电源键，关断所有电源。
+* Instructions without feedback:
 
-2.  命令行控制方式操作流程
-	打开命令行，输入“roscore”；
-	可使用快捷键“ctrl+shift+T”新开一个命令窗口，输入"rosrun lander control_cmd"【这里lander是项目名，control_cmd是可执行文件名】；
-	执行命令"getpos"，检查编码器初始位置，若正确，再执行后续命令；
-	执行命令"init"，使着陆器回到初始位姿，改变记录足端信息的文件为初始信息；
-	执行实验所需要的命令；
-	若遇到命令执行出错，顺序执行"cl"(清除错误信息)、“en”（重新使能电机）。然后再进行后续操作。
+Get initial positions of encoders ```[getposplan][instruction 0]```
 
-3.  上位机控制方式操作流程
-	先检查上位机和工控机的网线连接情况，打开屏幕右侧的“NetWork设置”，拉到最后一个Wired网口，即“Network Proxy”上面的网口，将其右上角的链接按键打开即可；
-【上位机端操作流程】	
-	上述cmd执行流程，已经在上位机的MATLAB代码中写好了，直接执行MATLAB代码即可。在上位机打开MATLAB的方式为：主目录/matlab/bin文件夹下打开命令行，运行“./matlab”；
-	打开matlab后，切换到“/home/abc/lander_control_ws/src”文件夹下，这个文件夹放置了上位机端所有的控制源代码。将“自由步态_通讯测试”文件夹加入matlab运行目录下，之后就可以运行该文件夹内的“control_plan_matlab.m”文件了。
-【着陆器端操作流程】
-	打开命令行，输入“roscore”；
-	可使用快捷键“ctrl+shift+T”新开一个命令窗口，输入"rosrun lander control_plan";
-【注意：由于ROS话题通讯要求发布端先创建话题，因此需要先运行“control_plan_matlab.m”文件，之后才能在着陆器端执行"rosrun lander control_plan"】
-【上位机MATLAB控制代码说明】
-1.无反馈控制，自由周期步态：
-	该脚本会顺序发布[getposplan->initplan->planfoot->planmotion]命令，发布getposplan命令后，提示操作者在着陆器工控机端检查窗口输出的编码器信息是否都在零位，以及足端位置信息是否是初始位置（0.441841 0 -0.445143），若编码器位置信息正确，键入“y”继续运行后续命令；之后操作者可以选择是否有必要执行初始化操作，若不需要，键入“n”即可跳过；发布planmotion命令，会使四条腿运行到步态规划要求的初始位置；然后进入while循环中，循环发布步态规划计算出的轨迹点，只有检测到上一次的规划轨迹运行完毕后，才会继续发布下一次的轨迹规划计算结果。
-2.有反馈控制，触地后重新规划轨迹：
-	前面几步都一样；移动腿时，MATLAB端发布planmotionfeedback命令，若足端检测到触地，停止运动，返回四条腿足端的位置，以供重新规划运动。移动身体时，MATLAB端不需要反馈，可以发布planmotion命令。
+Pose initialization ```[initplan][instruction 1]```
 
-	
-#### 其它注意事项
-1.  电机限位：
-利用xml文件实现，主电机［-150，0.01］，即丝杠长度；辅电机［-0.01，1.15］，此处单位为弧度，及0～66deg．
-其它参数，包括：最大和最小速度限制、最大和最小加速度限制，不能确保配置正确，需要后续仔细思考。
-2.  工程的src文件夹内存有两个文本文件：“RobotParam”和“PlanTrace”.
-“RobotParam”：非常重要，只要是设计运动学反解的程序，都会先从中读取四条腿的末端位置，且在程序执行结束后会更新该文件。为了使断电后仍能记录当前位置，才将其记录在文本文件内。初始位置是（0.441841 0 -0.445143）。程序运行时不要打开该文件，防止读写受阻。若程序出现异常，也会时文件内记录内容有误，因此推荐开机后执行init指令，使所有电机回到零位，并将该文件内四条腿末端位置置为初始位置。
-“PlanTrace”：前面已经提过其内容和数据格式，可以用于验证步态规划的数据点能否被顺利执行。
-3.   xxxx
+Single leg and multi-leg motion simultaneously ```[planfoot][instruction 2]```:
 
+Requires setting leg_index (0/1/2/3 or 12, where 12 represents all legs) and four arrays, each containing three elements, specifying the displacement dx, dy, and dz of the four legs relative to the initial position.
 
-#### 问题处理
-1.  【最常见的问题】开机后编码器位置出现错误，样机在初始位置但编码器信息不在零位。一般出现这种问题的原因有：没有规范开关机、电机异常掉线，执行3.  或“contorl_plan”时没有任何反应（此时没有别的方式，只能重启qaq）。并且一般只有四个主电机编码器出错。
-	解决方式：
-	运行"control_cmd"，执行[mvm]命令，把所有不在初始位置的电机调到零位。【若上一次关机时执行了init，开机即使编码器信息出现问题，电机也在零位，此步可以跳过】，结束"control_cmd"命令；
-	打开工程目录下的“kaanh.xml”文件，在<Controller> / <MotorPoolObject>子项下，把[slave="0/3/6/9"]的电机[pos_offset]参数设置为0.运行"control_cmd"，执行getpos，得到0/3/6/9号电机的当前编码器读数。结束"control_cmd"命令；
-	把0/3/6/9号电机的当前编码器读数设置到[slave="0/3/6/9"]的[pos_offset]参数下即可。
-2.  每次执行完"control_cmd"或“contorl_plan”后，需要关闭当前命令窗口，解除对设备的占用。若继续运行命令，新开一个命令窗口。若仍显示设备占用，关闭roscore后，重启一个roscore。
-3.  “contorl_plan”模式下，执行planinit命令时，若还没运行完毕指令就直接退出，一般是规划轨迹出现问题，点击出现了位置/速度/加速度不连续的问题，且这种控制模式下不会报错。可以把轨迹点到处并存在“PlanTrace”文件内，利用“contorl_cmd”的模式检查问题出现原因。
+Motion along planned trajectory points ```[planmotion][instruction 3]```:
 
-#### 待完善部分
-1.  实施控制与读取控制方式control_planRT
-2.  IMU集成到控制函数中
+Requires setting data_num (not exceeding 100) and the displacement trajectory of the four legs.
 
-#### 版本说明
+Clear misalignment and re-enable motors ```[cl][instruction -1]```
 
-Updated by FuZe，2022/7/11
+* Instructions with feedback:
+
+Motion along planned trajectory points ```[planmotionfeedback][instruction 3]```: 
+
+Returns the positions of the four leg tips.
 
